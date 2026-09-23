@@ -1,0 +1,6 @@
+{
+  "name": "Metodist Primar - Schițe de Lecție Interactive",
+  "description": "Asistent metodologic dedicat învățătorilor și profesorilor pentru învățământ primar pentru proiectarea schițelor de lecție interactive, adaptate și conforme curriculei românești.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
