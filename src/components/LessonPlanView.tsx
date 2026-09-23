@@ -19,9 +19,11 @@ import {
   PlusCircle,
   HelpCircle,
   Paperclip,
+  FileDown,
 } from 'lucide-react';
 import { LessonPlan, LessonStage } from '../types';
 import { generateDocxBlob, downloadBlob } from '../utils/docxExport';
+import { downloadLessonPlanPdf } from '../utils/pdfExport';
 import { PRIMARY_GRADES, PRIMARY_SUBJECTS, LESSON_TYPES } from '../data/curriculumData';
 import { ensureGameActivity } from '../utils/gameGenerator';
 import { InteractiveGameModal } from './InteractiveGameModal';
@@ -50,6 +52,7 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedPlan, setEditedPlan] = useState<LessonPlan | null>(lesson);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
 
   // Delete Confirmation Modal
@@ -227,6 +230,19 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!editedPlan) return;
+    try {
+      setIsExportingPdf(true);
+      await downloadLessonPlanPdf(editedPlan, 'lesson-plan-document');
+    } catch (err) {
+      console.error('Eroare export PDF:', err);
+      window.print();
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const handleSave = () => {
     if (editedPlan) {
       onUpdateLesson(editedPlan);
@@ -388,10 +404,26 @@ An școlar 2026 - 2027`;
           <button
             onClick={handleExportDocx}
             disabled={isExporting}
+            title="Descarcă schița de lecție în format Word (.docx)"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Word (.docx)</span>
+          </button>
+
+          {/* BUTON DESCARCĂ PDF */}
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            title="Descarcă schița de lecție în format PDF (.pdf)"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-50 rounded-lg shadow-2xs transition-all cursor-pointer"
+          >
+            {isExportingPdf ? (
+              <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5" />
+            )}
+            <span>PDF (.pdf)</span>
           </button>
 
           {/* BUTON PRINT */}
@@ -407,7 +439,10 @@ An școlar 2026 - 2027`;
 
       {/* Main Document Content */}
       <div className="p-4 sm:p-8 flex justify-center flex-1">
-        <div className="w-full max-w-4xl bg-white shadow-md border border-stone-200 rounded-2xl p-6 sm:p-12 font-sans print-card">
+        <div
+          id="lesson-plan-document"
+          className="w-full max-w-4xl bg-white shadow-md border border-stone-200 rounded-2xl p-6 sm:p-12 font-sans print-card"
+        >
           {/* Titlu Antet Document */}
           <div className="text-center pb-5 border-b-2 border-stone-900 mb-6">
             <h2 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight">

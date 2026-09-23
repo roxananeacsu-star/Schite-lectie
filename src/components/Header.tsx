@@ -9,9 +9,12 @@ import {
   PlusCircle,
   Paperclip,
   Columns,
+  FileDown,
+  RotateCcw,
 } from 'lucide-react';
 import { LessonPlan } from '../types';
 import { generateDocxBlob, downloadBlob } from '../utils/docxExport';
+import { downloadLessonPlanPdf } from '../utils/pdfExport';
 
 interface HeaderProps {
   activeTab: 'lesson' | 'chat' | 'saved';
@@ -33,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSplitView,
 }) => {
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isExportingPdf, setIsExportingPdf] = React.useState(false);
 
   const handleExportDocx = async () => {
     if (!currentLesson) return;
@@ -47,6 +51,25 @@ export const Header: React.FC<HeaderProps> = ({
       console.error('Eroare export docx:', err);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!currentLesson) return;
+    try {
+      setIsExportingPdf(true);
+      setActiveTab('lesson');
+      setTimeout(async () => {
+        try {
+          await downloadLessonPlanPdf(currentLesson, 'lesson-plan-document');
+        } catch (err) {
+          window.print();
+        } finally {
+          setIsExportingPdf(false);
+        }
+      }, 250);
+    } catch (err) {
+      setIsExportingPdf(false);
     }
   };
 
@@ -176,6 +199,20 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Download className="w-4 h-4 text-blue-700" />
                 <span>Word</span>
+              </button>
+
+              <button
+                onClick={handleExportPdf}
+                disabled={isExportingPdf}
+                title="Descarcă schița de lecție în format PDF (.pdf)"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              >
+                {isExportingPdf ? (
+                  <RotateCcw className="w-4 h-4 animate-spin text-red-600" />
+                ) : (
+                  <FileDown className="w-4 h-4 text-red-600" />
+                )}
+                <span>PDF</span>
               </button>
 
               <button
