@@ -176,13 +176,13 @@ export const InteractiveGameModal: React.FC<InteractiveGameModalProps> = ({
         </div>
 
         {/* Taburi de Navigare: Joc la Tablă | Blooket | Wayground | Întrebări */}
-        <div className="flex items-center bg-stone-100 p-1.5 border-b border-stone-200 gap-1 overflow-x-auto shrink-0 text-xs font-bold">
+        <div className="flex items-center bg-stone-100/90 p-1.5 border-b border-stone-200/90 gap-1 overflow-x-auto shrink-0 text-xs font-bold shadow-2xs">
           <button
             onClick={() => setActiveTab('play')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
               activeTab === 'play'
                 ? 'bg-white text-blue-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
             }`}
           >
             <Gamepad2 className="w-4 h-4 text-blue-600" />
@@ -191,10 +191,10 @@ export const InteractiveGameModal: React.FC<InteractiveGameModalProps> = ({
 
           <button
             onClick={() => setActiveTab('blooket')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
               activeTab === 'blooket'
                 ? 'bg-white text-amber-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
             }`}
           >
             <span className="text-sm">🦊</span>
@@ -203,10 +203,10 @@ export const InteractiveGameModal: React.FC<InteractiveGameModalProps> = ({
 
           <button
             onClick={() => setActiveTab('wayground')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
               activeTab === 'wayground'
                 ? 'bg-white text-emerald-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
             }`}
           >
             <Zap className="w-4 h-4 text-emerald-600" />
@@ -215,10 +215,10 @@ export const InteractiveGameModal: React.FC<InteractiveGameModalProps> = ({
 
           <button
             onClick={() => setActiveTab('questions')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
               activeTab === 'questions'
                 ? 'bg-white text-stone-900 shadow-xs'
-                : 'text-stone-600 hover:text-stone-900'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
             }`}
           >
             <HelpCircle className="w-4 h-4 text-stone-500" />
@@ -274,10 +274,10 @@ export const InteractiveGameModal: React.FC<InteractiveGameModalProps> = ({
                       const isThisSelected = selectedOption === variant;
                       const isThisCorrect = variant === currentQ.raspunsCorect;
 
-                      let btnStyle = `p-4 sm:p-5 rounded-2xl font-bold text-sm sm:text-base text-left transition-all border shadow-xs flex items-center justify-between cursor-pointer `;
+                      let btnStyle = `p-4 sm:p-5 rounded-2xl font-bold text-sm sm:text-base text-left transition-all duration-200 border shadow-2xs hover:shadow-xs flex items-center justify-between cursor-pointer `;
 
                       if (!isAnswered) {
-                        btnStyle += `bg-white hover:bg-stone-50 border-stone-300 hover:border-blue-500 hover:scale-[1.01] text-stone-900`;
+                        btnStyle += `bg-white hover:bg-stone-50 border-stone-300 hover:border-blue-500 hover:-translate-y-0.5 active:translate-y-0 text-stone-900`;
                       } else {
                         if (isThisCorrect) {
                           btnStyle += `bg-emerald-600 text-white border-emerald-700 shadow-md ring-4 ring-emerald-500/20`;

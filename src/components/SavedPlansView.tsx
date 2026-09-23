@@ -120,7 +120,7 @@ export const SavedPlansView: React.FC<SavedPlansViewProps> = ({
               <div
                 key={plan.id}
                 onClick={() => onOpenLesson(plan)}
-                className="bg-white p-5 rounded-2xl border border-stone-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-xs hover:shadow-md hover:border-blue-300 hover:-translate-y-1 active:translate-y-0 transition-all duration-200 cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between text-xs text-stone-500 mb-1.5">
@@ -154,7 +154,7 @@ export const SavedPlansView: React.FC<SavedPlansViewProps> = ({
                     {plan.feedbackFinal?.jocuriDigitaleSiInteractive && (
                       <>
                         <span>·</span>
-                        <span className="text-emerald-700 font-medium">Wordwall</span>
+                        <span className="text-emerald-700 font-medium">Activitate Ludică</span>
                       </>
                     )}
                   </div>
@@ -169,7 +169,7 @@ export const SavedPlansView: React.FC<SavedPlansViewProps> = ({
                     <button
                       onClick={(e) => handleExport(e, plan)}
                       title="Descarcă direct în Word (.docx)"
-                      className="p-1.5 bg-stone-100 hover:bg-blue-50 hover:text-blue-700 text-stone-700 rounded-lg text-xs transition-colors"
+                      className="p-1.5 bg-stone-100 hover:bg-blue-50 hover:text-blue-700 text-stone-700 rounded-lg text-xs shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 cursor-pointer"
                     >
                       <FileDown className="w-4 h-4" />
                     </button>
@@ -181,7 +181,7 @@ export const SavedPlansView: React.FC<SavedPlansViewProps> = ({
                         }
                       }}
                       title="Șterge din colecție"
-                      className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-xs hover:shadow-2xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

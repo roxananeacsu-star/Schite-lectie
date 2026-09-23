@@ -335,7 +335,7 @@ An școlar 2026 - 2027`;
           <button
             onClick={onSwitchToChat}
             title="Deschide Chat-ul metodic și atașează imagini din manual, PDF sau fișiere resursă"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <MessageSquare className="w-3.5 h-3.5 text-blue-700" />
             <Paperclip className="w-3.5 h-3.5 text-blue-700" />
@@ -348,7 +348,7 @@ An școlar 2026 - 2027`;
             onClick={() => setShowRegenerateModal(true)}
             disabled={isRegenerating}
             title="Dacă nu este potrivit sau doriți alte idei, regenerați schița"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer disabled:opacity-50"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span>{isRegenerating ? 'Se regenerează...' : 'Regenerează'}</span>
@@ -358,7 +358,7 @@ An școlar 2026 - 2027`;
           <button
             onClick={() => setShowDeleteConfirm(true)}
             title="Șterge această schiță dacă nu este bună și începe una nouă"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5 text-red-600" />
             <span className="hidden sm:inline">Șterge</span>
@@ -373,10 +373,10 @@ An școlar 2026 - 2027`;
                 setIsEditing(true);
               }
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer ${
               isEditing
-                ? 'bg-emerald-600 text-white border-emerald-700'
-                : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
+                : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50 hover:border-stone-400'
             }`}
           >
             {isEditing ? (
@@ -394,7 +394,7 @@ An școlar 2026 - 2027`;
           <button
             onClick={handleCopyAll}
             title="Copiază textul schiței"
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-colors cursor-pointer"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-white hover:bg-stone-50 hover:border-stone-400 border border-stone-300 rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <Copy className="w-3.5 h-3.5 text-stone-500" />
             <span>{copiedText ? 'Copiat!' : 'Copiază'}</span>
@@ -405,7 +405,7 @@ An școlar 2026 - 2027`;
             onClick={handleExportDocx}
             disabled={isExporting}
             title="Descarcă schița de lecție în format Word (.docx)"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg shadow-2xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Word (.docx)</span>
@@ -416,7 +416,7 @@ An școlar 2026 - 2027`;
             onClick={handleExportPdf}
             disabled={isExportingPdf}
             title="Descarcă schița de lecție în format PDF (.pdf)"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-50 rounded-lg shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-50 rounded-lg shadow-2xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             {isExportingPdf ? (
               <RotateCcw className="w-3.5 h-3.5 animate-spin" />
@@ -430,7 +430,7 @@ An școlar 2026 - 2027`;
           <button
             onClick={() => window.print()}
             title="Tipărește pe hârtie sau PDF"
-            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-300 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 hover:border-stone-400 border border-stone-300 rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -438,10 +438,10 @@ An școlar 2026 - 2027`;
       </div>
 
       {/* Main Document Content */}
-      <div className="p-4 sm:p-8 flex justify-center flex-1">
+      <div className="p-4 sm:p-8 flex justify-center flex-1 bg-stone-100/50">
         <div
           id="lesson-plan-document"
-          className="w-full max-w-4xl bg-white shadow-md border border-stone-200 rounded-2xl p-6 sm:p-12 font-sans print-card"
+          className="w-full max-w-4xl bg-white paper-shading border border-stone-200/90 hover:border-stone-300 rounded-2xl p-6 sm:p-12 font-sans print-card transition-all duration-300"
         >
           {/* Titlu Antet Document */}
           <div className="text-center pb-5 border-b-2 border-stone-900 mb-6">
@@ -551,7 +551,7 @@ An școlar 2026 - 2027`;
           </div>
 
           {/* Obiective Operaționale */}
-          <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50/40">
+          <div className="mb-6 p-4 rounded-xl border border-stone-200/90 bg-stone-50/50 subtle-shading hover:border-stone-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-700" />
@@ -605,7 +605,7 @@ An școlar 2026 - 2027`;
               Activitățile planificate (Desfășurarea pe etape):
             </h3>
 
-            <div className="border border-stone-300 rounded-xl overflow-hidden shadow-2xs">
+            <div className="border border-stone-300/90 rounded-xl overflow-hidden subtle-shading">
               <table className="w-full text-left border-collapse text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-stone-900 text-white font-semibold divide-x divide-stone-800">
@@ -624,7 +624,7 @@ An școlar 2026 - 2027`;
                   {editedPlan.activitatiPlanificate?.map((stage, idx) => (
                     <tr
                       key={stage.id || idx}
-                      className={`divide-x divide-stone-200 ${
+                      className={`divide-x divide-stone-200 transition-colors duration-150 hover:bg-blue-50/40 ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'
                       }`}
                     >
@@ -721,8 +721,8 @@ An școlar 2026 - 2027`;
             </div>
           </div>
 
-          {/* Feedback Final & Joc Wordwall */}
-          <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-200">
+          {/* Feedback Final & Joc Wordwall / Blooket / Wayground */}
+          <div className="mb-6 p-4 rounded-xl bg-stone-50/70 border border-stone-200/90 subtle-shading hover:border-stone-300 transition-all duration-200">
             <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
               Feedback la finalul orei:
@@ -739,16 +739,16 @@ An școlar 2026 - 2027`;
               </div>
 
               {/* Activitate Didactică Ludică (Joc la Tablă, Blooket, Wayground) */}
-              <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl shadow-xs">
+              <div className="p-4 bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-purple-50/80 border border-blue-200/90 rounded-2xl shadow-xs hover:shadow-sm hover:border-blue-300/90 transition-all duration-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-xs">
+                    <div className="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-xs hover:scale-105 transition-transform">
                       <Gamepad2 className="w-5 h-5 text-amber-300" />
                     </div>
                     <div>
                       <div className="font-extrabold text-xs sm:text-sm text-stone-900 flex items-center gap-2">
                         <span>Activitate Ludică Interactivă</span>
-                        <span className="text-[10px] bg-amber-400 text-stone-950 font-black px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-amber-400 text-stone-950 font-black px-2 py-0.5 rounded-full shadow-2xs">
                           GATA DE JOC / EXPORT
                         </span>
                       </div>
@@ -758,12 +758,12 @@ An școlar 2026 - 2027`;
                     </div>
                   </div>
 
-                  <span className="text-xs text-blue-900 font-bold bg-white/90 border border-blue-200 px-2.5 py-1 rounded-xl self-start sm:self-auto shadow-2xs">
+                  <span className="text-xs text-blue-900 font-bold bg-white/95 border border-blue-200 px-2.5 py-1 rounded-xl self-start sm:self-auto shadow-2xs">
                     {ensureGameActivity(editedPlan).intrebari.length} întrebări pregătite
                   </span>
                 </div>
 
-                <p className="text-xs text-stone-700 mb-3 bg-white/70 p-2.5 rounded-xl border border-stone-200/60 leading-relaxed">
+                <p className="text-xs text-stone-700 mb-3 bg-white/80 p-2.5 rounded-xl border border-stone-200/70 leading-relaxed shadow-2xs">
                   {editedPlan.activitateLudica?.descriere ||
                     editedPlan.feedbackFinal?.jocuriDigitaleSiInteractive ||
                     'Activitate ludică interactivă de consolidare a noțiunilor asimilate în cadrul orei.'}
@@ -777,7 +777,7 @@ An școlar 2026 - 2027`;
                       setGameModalTab('play');
                       setShowGameModal(true);
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                   >
                     <Gamepad2 className="w-4 h-4 text-amber-300" />
                     <span>🕹️ Joacă Acum la Tablă (Pe ecran)</span>
@@ -789,7 +789,7 @@ An școlar 2026 - 2027`;
                       setGameModalTab('blooket');
                       setShowGameModal(true);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 hover:border-amber-400 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 hover:border-amber-400 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                   >
                     <span className="text-sm">🦊</span>
                     <span>Creează în Blooket (blooket.com)</span>
@@ -801,7 +801,7 @@ An școlar 2026 - 2027`;
                       setGameModalTab('wayground');
                       setShowGameModal(true);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-950 border border-emerald-300 hover:border-emerald-400 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-950 border border-emerald-300 hover:border-emerald-400 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Creează în Wayground (wayground.com)</span>
@@ -813,7 +813,7 @@ An școlar 2026 - 2027`;
                       setGameModalTab('questions');
                       setShowGameModal(true);
                     }}
-                    className="flex items-center gap-1 px-2.5 py-2 text-stone-600 hover:text-stone-900 hover:bg-white/80 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-2 text-stone-600 hover:text-stone-900 hover:bg-white/90 border border-transparent hover:border-stone-200 rounded-xl text-xs font-semibold hover:shadow-2xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                   >
                     <HelpCircle className="w-3.5 h-3.5" />
                     <span>Vezi întrebările</span>

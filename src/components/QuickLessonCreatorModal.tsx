@@ -248,7 +248,7 @@ export const QuickLessonCreatorModal: React.FC<QuickLessonCreatorModalProps> = (
                   key={i}
                   type="button"
                   onClick={() => setTopic(sugg)}
-                  className="px-2.5 py-1 bg-stone-100 hover:bg-blue-100 hover:text-blue-900 text-stone-700 text-xs rounded-lg transition-colors cursor-pointer"
+                  className="px-2.5 py-1 bg-stone-100 hover:bg-blue-100 hover:text-blue-900 text-stone-700 text-xs rounded-lg shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 cursor-pointer"
                 >
                   {sugg}
                 </button>
@@ -447,7 +447,7 @@ export const QuickLessonCreatorModal: React.FC<QuickLessonCreatorModalProps> = (
             type="button"
             onClick={handleCreate}
             disabled={!canSubmit || isUploading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
             <span>

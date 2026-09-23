@@ -170,10 +170,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             }`}
           >
             <div
-              className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-xs transition-all ${
+              className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-xs transition-all duration-200 ${
                 msg.sender === 'user'
-                  ? 'bg-blue-700 text-white rounded-tr-xs'
-                  : 'bg-white text-stone-800 border border-stone-200/90 rounded-tl-xs'
+                  ? 'bg-blue-700 text-white rounded-tr-xs hover:shadow-sm'
+                  : 'bg-white text-stone-800 border border-stone-200/90 rounded-tl-xs hover:shadow-sm hover:border-stone-300'
               }`}
             >
               {/* Message Header */}
@@ -276,7 +276,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
               {/* Generated Lesson Plan Card Indicator */}
               {msg.lessonPlan && (
-                <div className="mt-3.5 p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-stone-900">
+                <div className="mt-3.5 p-3.5 bg-blue-50/90 border border-blue-200/90 rounded-2xl text-stone-900 shadow-xs hover:shadow-sm hover:border-blue-300 transition-all duration-200">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 uppercase tracking-wide">
@@ -296,7 +296,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <button
                           onClick={() => onRegenerateLesson(msg.lessonPlan!)}
                           title="Regenerează această schiță"
-                          className="p-1.5 text-stone-500 hover:text-blue-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-stone-500 hover:text-blue-700 hover:bg-white hover:shadow-2xs rounded-lg transition-all duration-150 cursor-pointer"
                         >
                           <RotateCcw className="w-4 h-4" />
                         </button>
@@ -305,7 +305,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <button
                           onClick={() => onDeleteLesson(msg.lessonPlan!.id)}
                           title="Șterge schița din ecran"
-                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-white hover:shadow-2xs rounded-lg transition-all duration-150 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -331,7 +331,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-blue-200/60 flex items-center justify-between gap-2">
                     <button
                       onClick={() => onOpenLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Deschide Schița Completă</span>
@@ -340,7 +340,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
                     <button
                       onClick={() => handleExportLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-blue-50 text-blue-900 border border-blue-200 hover:border-blue-300 rounded-xl text-xs font-semibold shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
                       title="Descarcă documentul Word formatat (.docx)"
                     >
                       <FileDown className="w-3.5 h-3.5 text-blue-700" />
@@ -393,7 +393,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             {attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-blue-200 text-xs shadow-2xs"
+                className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-blue-200 text-xs shadow-2xs hover:shadow-xs hover:border-blue-300 hover:-translate-y-0.5 transition-all duration-200"
               >
                 {att.previewUrl ? (
                   <img
@@ -433,8 +433,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       )}
 
       {/* Input Area */}
-      <div className="p-3 bg-white border-t border-stone-200">
-        <div className="flex items-end gap-2 bg-stone-50 border border-stone-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
+      <div className="p-3 bg-white border-t border-stone-200/90 shadow-[0_-1px_3px_0_rgba(0,0,0,0.02)]">
+        <div className="flex items-end gap-2 bg-stone-50 border border-stone-300/90 rounded-2xl p-2 shadow-2xs focus-within:shadow-xs focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-600/30 focus-within:border-blue-600 transition-all duration-200">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -460,7 +460,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               title="Atașează mai multe fișiere (foto pagină manual, PDF, Word etc.)"
-              className="p-2 text-stone-600 hover:text-blue-700 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-stone-600 hover:text-blue-700 hover:bg-stone-200/70 hover:shadow-2xs hover:-translate-y-0.5 active:translate-y-0 rounded-xl transition-all duration-200 cursor-pointer"
             >
               <Paperclip className="w-4 h-4 text-blue-700" />
             </button>
@@ -469,7 +469,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               type="button"
               onClick={handleSend}
               disabled={(!inputText.trim() && attachments.length === 0) || isLoading || isProcessingFiles}
-              className="p-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-xl transition-colors shadow-xs cursor-pointer"
+              className="p-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-xl shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
               title="Trimite către metodist"
             >
               <Send className="w-4 h-4" />
