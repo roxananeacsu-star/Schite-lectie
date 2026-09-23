@@ -23,6 +23,8 @@ import {
 import { LessonPlan, LessonStage } from '../types';
 import { generateDocxBlob, downloadBlob } from '../utils/docxExport';
 import { PRIMARY_GRADES, PRIMARY_SUBJECTS, LESSON_TYPES } from '../data/curriculumData';
+import { ensureGameActivity } from '../utils/gameGenerator';
+import { InteractiveGameModal } from './InteractiveGameModal';
 
 interface LessonPlanViewProps {
   lesson: LessonPlan | null;
@@ -52,6 +54,10 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
 
   // Delete Confirmation Modal
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Modal Activitate Didactică Ludică (Joc la Tablă / Blooket / Wayground)
+  const [showGameModal, setShowGameModal] = useState(false);
+  const [gameModalTab, setGameModalTab] = useState<'play' | 'blooket' | 'wayground' | 'questions'>('play');
 
   // Regenerate Modal / Options
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
@@ -697,28 +703,87 @@ An școlar 2026 - 2027`;
                 </span>
               </div>
 
-              {/* Joc Wordwall */}
-              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl">
-                <div className="flex items-center gap-2 font-bold text-blue-900 text-xs mb-1">
-                  <Gamepad2 className="w-4 h-4 text-blue-700" />
-                  <span>Joc didactic interactiv (Wordwall):</span>
+              {/* Activitate Didactică Ludică (Joc la Tablă, Blooket, Wayground) */}
+              <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-xs">
+                      <Gamepad2 className="w-5 h-5 text-amber-300" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-xs sm:text-sm text-stone-900 flex items-center gap-2">
+                        <span>Activitate Ludică Interactivă</span>
+                        <span className="text-[10px] bg-amber-400 text-stone-950 font-black px-2 py-0.5 rounded-full">
+                          GATA DE JOC / EXPORT
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-stone-500 font-medium">
+                        Rulează jocul pe ecran sau creează instant în <strong>Blooket</strong> și <strong>Wayground</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="text-xs text-blue-900 font-bold bg-white/90 border border-blue-200 px-2.5 py-1 rounded-xl self-start sm:self-auto shadow-2xs">
+                    {ensureGameActivity(editedPlan).intrebari.length} întrebări pregătite
+                  </span>
                 </div>
-                <p className="text-xs text-stone-700 mb-2">
-                  {editedPlan.feedbackFinal?.jocuriDigitaleSiInteractive ||
-                    'Joc interactiv adaptat temei lecției.'}
+
+                <p className="text-xs text-stone-700 mb-3 bg-white/70 p-2.5 rounded-xl border border-stone-200/60 leading-relaxed">
+                  {editedPlan.activitateLudica?.descriere ||
+                    editedPlan.feedbackFinal?.jocuriDigitaleSiInteractive ||
+                    'Activitate ludică interactivă de consolidare a noțiunilor asimilate în cadrul orei.'}
                 </p>
 
-                {editedPlan.feedbackFinal?.linkWordwallExemplu && (
-                  <a
-                    href={editedPlan.feedbackFinal.linkWordwallExemplu}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-print inline-flex items-center gap-1.5 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition-colors"
+                {/* Butoane Acțiune Directe */}
+                <div className="no-print flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGameModalTab('play');
+                      setShowGameModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
                   >
-                    <span>Deschide jocul Wordwall</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+                    <Gamepad2 className="w-4 h-4 text-amber-300" />
+                    <span>🕹️ Joacă Acum la Tablă (Pe ecran)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGameModalTab('blooket');
+                      setShowGameModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 hover:border-amber-400 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  >
+                    <span className="text-sm">🦊</span>
+                    <span>Creează în Blooket (blooket.com)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGameModalTab('wayground');
+                      setShowGameModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-950 border border-emerald-300 hover:border-emerald-400 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Creează în Wayground (wayground.com)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGameModalTab('questions');
+                      setShowGameModal(true);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-2 text-stone-600 hover:text-stone-900 hover:bg-white/80 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span>Vezi întrebările</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-start gap-2">
@@ -875,6 +940,17 @@ An școlar 2026 - 2027`;
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL ACTIVITATE DIDACTICĂ LUDICĂ (BLOOKET / WAYGROUND / LA TABLĂ) */}
+      {showGameModal && editedPlan && (
+        <InteractiveGameModal
+          isOpen={showGameModal}
+          onClose={() => setShowGameModal(false)}
+          activity={ensureGameActivity(editedPlan)}
+          lesson={editedPlan}
+          initialTab={gameModalTab}
+        />
       )}
     </div>
   );

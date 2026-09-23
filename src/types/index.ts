@@ -38,12 +38,26 @@ export interface LessonStage {
   resurseFizice?: string; // ex: "Cărți deschise pe bancă la pag. 42, jetoane colorate"
 }
 
+export interface InteractiveGameQuestion {
+  intrebare: string;
+  variante: string[]; // 3-4 opțiuni de răspuns
+  raspunsCorect: string; // textul opțiunii corecte
+  explicatie?: string; // explicație didactică pentru elevi
+}
+
+export interface InteractiveGameActivity {
+  titluJoc: string;
+  descriere: string;
+  platformeRecomandate?: ('Blooket' | 'Wayground' | 'Wordwall')[];
+  intrebari: InteractiveGameQuestion[];
+}
+
 export interface FeedbackFinal {
   timpAlocat: string; // ex: "5 min"
   metodaVerificare: string; // ex: "Metoda 'Arată și spune', recapitulare frontală, autoevaluare cu semafor"
-  jocuriDigitaleSiInteractive: string; // ex: "Joc Wordwall 'Roata cuvintelor', concurs pe grupe"
-  linkWordwallExemplu?: string; // ex: "https://wordwall.net/ro/resource/..."
-  aprecieriSiConcluzii: string; // ex: "Aprecieri verbale individuale și colective, recompense cu buline vesele"
+  jocuriDigitaleSiInteractive: string; // ex: "Joc interactiv adaptat temei"
+  linkWordwallExemplu?: string; // opțional
+  aprecieriSiConcluzii: string; // ex: "Aprecieri verbale individuale și colective"
 }
 
 export interface LessonPlan {
@@ -59,6 +73,7 @@ export interface LessonPlan {
   obiectiveOperationale: string[]; // ex: ["O1: Să identifice substantivele...", "O2: Să recunoască..."]
   activitatiPlanificate: LessonStage[];
   feedbackFinal: FeedbackFinal;
+  activitateLudica?: InteractiveGameActivity; // Joc interactiv Blooket / Wayground / La tablă
   sugestiiDiferentiere?: string; // Pentru copii cu ritm rapid sau care au nevoie de sprijin suplimentar
   schemaTablei?: string; // Schița tablei (ce se scrie cu cretă albă/colorată, subliniat cu roșu)
   createdAt: number;

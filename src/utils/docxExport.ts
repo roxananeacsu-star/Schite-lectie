@@ -399,12 +399,36 @@ export async function generateDocxBlob(lesson: LessonPlan): Promise<Blob> {
               new TextRun({ text: `${lesson.feedbackFinal?.timpAlocat || '5 min'}\n`, font: 'Calibri' }),
               new TextRun({ text: 'Metodă de verificare: ', bold: true, font: 'Calibri' }),
               new TextRun({ text: `${lesson.feedbackFinal?.metodaVerificare || 'Metoda «Arată și spune»'}\n`, font: 'Calibri' }),
-              new TextRun({ text: 'Jocuri & Resurse Digitale (ex: Wordwall): ', bold: true, font: 'Calibri' }),
-              new TextRun({ text: `${lesson.feedbackFinal?.jocuriDigitaleSiInteractive || 'Joc interactiv la videoproiector / tablete'}\n`, font: 'Calibri' }),
+              new TextRun({ text: 'Jocuri & Activități Ludice (Blooket / Wayground / La tablă): ', bold: true, font: 'Calibri' }),
+              new TextRun({ text: `${lesson.activitateLudica?.titluJoc || lesson.feedbackFinal?.jocuriDigitaleSiInteractive || 'Joc interactiv la videoproiector / tablete'}\n`, font: 'Calibri' }),
               new TextRun({ text: 'Aprecieri și concluzii: ', bold: true, font: 'Calibri' }),
               new TextRun({ text: `${lesson.feedbackFinal?.aprecieriSiConcluzii || 'Aprecieri verbale încurajatoare'}`, font: 'Calibri' }),
             ],
           }),
+
+          ...(lesson.activitateLudica?.intrebari && lesson.activitateLudica.intrebari.length > 0 ? [
+            new Paragraph({
+              spacing: { before: 200, after: 100 },
+              children: [
+                new TextRun({
+                  text: 'Întrebări interactive pregătite pentru joc (Blooket / Wayground):',
+                  bold: true,
+                  size: 20,
+                  color: '1E3A8A',
+                  font: 'Calibri',
+                }),
+              ],
+            }),
+            ...lesson.activitateLudica.intrebari.map((q, idx) => (
+              new Paragraph({
+                spacing: { before: 60, after: 60 },
+                children: [
+                  new TextRun({ text: `${idx + 1}. ${q.intrebare} `, bold: true, font: 'Calibri' }),
+                  new TextRun({ text: `[Răspuns corect: ${q.raspunsCorect}]`, italics: true, color: '047857', font: 'Calibri' }),
+                ],
+              })
+            ))
+          ] : []),
 
           ...(lesson.schemaTablei ? [
             new Paragraph({

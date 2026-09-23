@@ -72,7 +72,8 @@ REGULI CRUCIALE DE INTERACȚIUNE ȘI CHAT CONVERSAȚIONAL:
        2. "Reactualizarea cunoștințelor" (ancorare în noțiunile anterioare).
        3. "Transmiterea noilor cunoștințe / Prezentarea noilor conținuturi" (cu sub-puncte clare A, B, C, D, scheme la tablă, marcaje cu roșu).
        4. "Activități de exersare, aplicare sau creație" (lucru cu cartea pe bancă, fișe, lucru pe grupe/creativ).
-   - Feedback la finalul orei: include metoda "Arată și spune", recapitulare frontală, și linkuri/sugestii către jocuri didactice Wordwall.
+   - Feedback la finalul orei: include metoda "Arată și spune", recapitulare frontală și activitate ludică interactivă dedicată (Blooket / Wayground / La tablă).
+   - Jocuri & activități ludice interactive: Generează obligatoriu un set de 4-6 întrebări interactive ludice pentru elevi, adaptate clasei și temei, gata de rulat la videoproiector/tablă sau exportat gratuit în Blooket (blooket.com) și Wayground (wayground.com).
    - La subsol: An școlar 2026 - 2027.
 
 RĂSPUNDE ÎNTOTDEAUNA ÎN FORMAT JSON STRICT cu structura:
@@ -139,18 +140,30 @@ RĂSPUNDE ÎNTOTDEAUNA ÎN FORMAT JSON STRICT cu structura:
     "feedbackFinal": {
       "timpAlocat": "5 min",
       "metodaVerificare": "Metoda «Arată și spune»...",
-      "jocuriDigitaleSiInteractive": "Joc Wordwall...",
-      "linkWordwallExemplu": "https://wordwall.net/ro-ro/community/...",
+      "jocuriDigitaleSiInteractive": "Joc interactiv adaptat temei (Blooket / Wayground / La tablă)...",
       "aprecieriSiConcluzii": "Aprecieri încurajatoare..."
+    },
+    "activitateLudica": {
+      "titluJoc": "Titlu antrenant pentru joc (ex: Cursa Substantivelor)",
+      "descriere": "Descriere scurtă a activității ludice...",
+      "platformeRecomandate": ["Blooket", "Wayground", "Wordwall"],
+      "intrebari": [
+        {
+          "intrebare": "Întrebare didactică adaptată vârstei?",
+          "variante": ["Opțiunea 1", "Opțiunea 2", "Opțiunea 3", "Opțiunea 4"],
+          "raspunsCorect": "Opțiunea 1",
+          "explicatie": "Explicație pe scurt a răspunsului corect."
+        }
+      ]
     },
     "schemaTablei": "Schița vizuală a tablei...",
     "sugestiiDiferentiere": "Sugestii pentru elevi cu ritm diferit de învățare..."
   },
   "suggestedPrompts": [
-    "Adaugă un joc suplimentar Wordwall",
-    "Propune o activitate practică pe grupe",
-    "Adaptează pentru Clasa Pregătitoare",
-    "Generează fișă de lucru asociată"
+    "Joacă la tablă activitatea ludică",
+    "Exportă setul de întrebări în Blooket",
+    "Generează un joc suplimentar pentru Wayground",
+    "Adaptează conținutul pentru lucru pe grupe"
   ]
 }`;
 
