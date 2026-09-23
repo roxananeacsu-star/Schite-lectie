@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   BookOpen,
   Info,
+  RotateCcw,
+  Trash2,
 } from 'lucide-react';
 import { ChatMessage, UploadedAttachment, LessonPlan } from '../types';
 import { processUploadedFile } from '../utils/fileParser';
@@ -26,6 +28,8 @@ interface ChatPanelProps {
   onOpenLesson: (lesson: LessonPlan) => void;
   currentLesson: LessonPlan | null;
   onApplyPromptSuggestion: (prompt: string) => void;
+  onDeleteLesson?: (id: string) => void;
+  onRegenerateLesson?: (lesson: LessonPlan) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -35,6 +39,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onOpenLesson,
   currentLesson,
   onApplyPromptSuggestion,
+  onDeleteLesson,
+  onRegenerateLesson,
 }) => {
   const [inputText, setInputText] = useState('');
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
@@ -259,21 +265,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2 pt-2 border-t border-blue-100">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-blue-100">
                     <button
                       onClick={() => onOpenLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       Deschide în Vizualizator
                     </button>
                     <button
                       onClick={() => handleExportLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-50 text-blue-900 border border-stone-200 rounded-lg text-xs font-medium transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-50 text-blue-900 border border-stone-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                     >
                       <FileDown className="w-3.5 h-3.5 text-blue-700" />
                       Descarcă Word (.docx)
                     </button>
+                    {onRegenerateLesson && (
+                      <button
+                        onClick={() => onRegenerateLesson(msg.lessonPlan!)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                        title="Regenerează această schiță dacă doriți idei noi"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Regenerează
+                      </button>
+                    )}
+                    {onDeleteLesson && (
+                      <button
+                        onClick={() => onDeleteLesson(msg.lessonPlan!.id)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                        title="Șterge schița dacă nu e bună"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Șterge
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

@@ -6,60 +6,178 @@ import {
   Check,
   Plus,
   Trash2,
+  RotateCcw,
   Sparkles,
   Gamepad2,
   ExternalLink,
   BookOpen,
-  Clock,
-  User,
-  Calendar,
-  Layers,
-  HelpCircle,
-  Save,
-  CheckCircle2,
   Copy,
-  ChevronRight,
-  Share2,
+  MessageSquare,
+  AlertTriangle,
+  Send,
+  X,
+  PlusCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { LessonPlan, LessonStage } from '../types';
 import { generateDocxBlob, downloadBlob } from '../utils/docxExport';
+import { PRIMARY_GRADES, PRIMARY_SUBJECTS, LESSON_TYPES } from '../data/curriculumData';
 
 interface LessonPlanViewProps {
   lesson: LessonPlan | null;
   onUpdateLesson: (updated: LessonPlan) => void;
   onSaveToHistory: (lesson: LessonPlan) => void;
-  onAskMethodologistToTweak: (instruction: string) => void;
+  onDeleteLesson: () => void;
+  onRegenerateLesson: (instruction?: string) => Promise<void> | void;
+  isRegenerating?: boolean;
+  onOpenQuickCreator: () => void;
+  onSwitchToChat: () => void;
 }
 
 export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
   lesson,
   onUpdateLesson,
   onSaveToHistory,
-  onAskMethodologistToTweak,
+  onDeleteLesson,
+  onRegenerateLesson,
+  isRegenerating = false,
+  onOpenQuickCreator,
+  onSwitchToChat,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedPlan, setEditedPlan] = useState<LessonPlan | null>(lesson);
   const [isExporting, setIsExporting] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+
+  // Delete Confirmation Modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Regenerate Modal / Options
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  const [customRegenInstruction, setCustomRegenInstruction] = useState('');
+
+  // Inline Quick Generator when no lesson is active
+  const [emptyGrade, setEmptyGrade] = useState('Clasa a III-a');
+  const [emptySubject, setEmptySubject] = useState('Limba și literatura română');
+  const [emptyTopic, setEmptyTopic] = useState('');
 
   React.useEffect(() => {
     setEditedPlan(lesson);
   }, [lesson]);
 
+  // Handle when empty: Show a clean generator, NOT static templates!
   if (!editedPlan) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-stone-50">
-        <div className="w-16 h-16 rounded-2xl bg-stone-200 text-stone-500 flex items-center justify-center mb-4">
-          <BookOpen className="w-8 h-8" />
+      <div className="flex flex-col items-center justify-center min-h-full p-6 sm:p-10 bg-stone-50 overflow-y-auto">
+        <div className="w-full max-w-xl bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto mb-4 border border-blue-100">
+            <Sparkles className="w-7 h-7 text-blue-600" />
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight mb-2">
+            Proiectează o Schiță de Lecție
+          </h2>
+          <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+            Metodistul generează automat schița completă conform structurii oficiale din documentul de referință (cu obiective, etape, timpi alocați, marcaje cu roșu la tablă și jocuri interactive Wordwall).
+          </p>
+
+          {/* Quick inline form */}
+          <div className="space-y-3.5 text-left mb-6">
+            <div>
+              <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5">
+                Clasa:
+              </label>
+              <select
+                value={emptyGrade}
+                onChange={(e) => {
+                  setEmptyGrade(e.target.value);
+                  const subjects = PRIMARY_SUBJECTS[e.target.value] || [];
+                  if (subjects.length > 0) setEmptySubject(subjects[0]);
+                }}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              >
+                {PRIMARY_GRADES.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5">
+                Disciplina:
+              </label>
+              <select
+                value={emptySubject}
+                onChange={(e) => setEmptySubject(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              >
+                {(PRIMARY_SUBJECTS[emptyGrade] || []).map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5">
+                Subiectul / Tema lecției:
+              </label>
+              <input
+                type="text"
+                placeholder="Introduceți tema (ex: Substantivul, Înmulțirea numerelor, Părțile plantei...)"
+                value={emptyTopic}
+                onChange={(e) => setEmptyTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && emptyTopic.trim()) {
+                    onRegenerateLesson(
+                      `Vă rog să generați schița pentru Clasa: ${emptyGrade}, Disciplina: ${emptySubject}, Subiectul: ${emptyTopic.trim()}`
+                    );
+                  }
+                }}
+                className="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-medium text-stone-900 focus:ring-2 focus:ring-blue-600 focus:outline-none shadow-2xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+            <button
+              onClick={() => {
+                if (!emptyTopic.trim()) {
+                  onOpenQuickCreator();
+                  return;
+                }
+                onRegenerateLesson(
+                  `Vă rog să generați o schiță completă de lecție conform formatului oficial: Clasa: ${emptyGrade}, Disciplina: ${emptySubject}, Subiectul: ${emptyTopic.trim()}`
+                );
+              }}
+              disabled={isRegenerating}
+              className="w-full sm:w-auto px-6 py-3 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isRegenerating ? (
+                <>
+                  <RotateCcw className="w-4 h-4 animate-spin" />
+                  <span>Se generează schița...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Generează Schița de Lecție</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onSwitchToChat}
+              className="w-full sm:w-auto px-4 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Scrie în Chat</span>
+            </button>
+          </div>
         </div>
-        <h3 className="text-lg font-bold text-stone-800">
-          Nicio schiță de lecție activă
-        </h3>
-        <p className="text-sm text-stone-500 max-w-md mt-1">
-          Selectați una dintre cele 3 schițe de referință din bara de sus sau
-          solicitați metodistului o schiță nouă în panoul de chat.
-        </p>
       </div>
     );
   }
@@ -84,8 +202,6 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
       onUpdateLesson(editedPlan);
       onSaveToHistory(editedPlan);
       setIsEditing(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
     }
   };
 
@@ -137,7 +253,7 @@ An școlar 2026 - 2027`;
     const newNum = (editedPlan.obiectiveOperationale?.length || 0) + 1;
     const updated = [
       ...(editedPlan.obiectiveOperationale || []),
-      `O ${newNum} Să aplice...`,
+      `O ${newNum} Să aplice noile noțiuni în exerciții practice.`,
     ];
     setEditedPlan({ ...editedPlan, obiectiveOperationale: updated });
   };
@@ -148,147 +264,128 @@ An școlar 2026 - 2027`;
     setEditedPlan({ ...editedPlan, obiectiveOperationale: updated });
   };
 
+  const triggerRegenerate = (instructions?: string) => {
+    setShowRegenerateModal(false);
+    onRegenerateLesson(instructions);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-stone-100 overflow-y-auto">
-      {/* Top Action Toolbar */}
-      <div className="no-print sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-2.5 flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-            Format: schițe de lecție.docx
+    <div className="flex flex-col h-full bg-stone-100 overflow-y-auto relative">
+      {/* Top Action Toolbar with DELETE and REGENERATE Buttons */}
+      <div className="no-print sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+        {/* Titlu Subiect Curent */}
+        <div className="flex items-center gap-2 max-w-[45%] truncate">
+          <span className="font-extrabold text-sm text-stone-900 truncate">
+            {editedPlan.subiectulLectiei}
           </span>
-          {saveSuccess && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Salvat cu succes!
-            </span>
-          )}
-          {copiedText && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-              <Check className="w-3.5 h-3.5" /> Textul a fost copiat!
-            </span>
-          )}
+          <span className="text-xs text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md font-semibold shrink-0">
+            {editedPlan.clasa}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Butoane de Acțiune: Regenerare, Ștergere, Editare, Descărcare */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* BUTON REGENERARE */}
           <button
-            onClick={handleCopyAll}
-            title="Copiază tot textul schiței pentru a-l lipi în alt document"
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-colors cursor-pointer"
+            onClick={() => setShowRegenerateModal(true)}
+            disabled={isRegenerating}
+            title="Dacă nu este potrivit sau doriți alte idei, regenerați schița"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Copy className="w-3.5 h-3.5 text-stone-500" />
-            <span className="hidden sm:inline">Copiază text</span>
+            <RotateCcw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+            <span>{isRegenerating ? 'Se regenerează...' : 'Regenerează'}</span>
           </button>
 
+          {/* BUTON ȘTERGE */}
           <button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => setShowDeleteConfirm(true)}
+            title="Șterge această schiță dacă nu este bună și începe una nouă"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+            <span className="hidden sm:inline">Șterge</span>
+          </button>
+
+          {/* BUTON EDITEAZĂ */}
+          <button
+            onClick={() => {
+              if (isEditing) {
+                handleSave();
+              } else {
+                setIsEditing(true);
+              }
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
               isEditing
-                ? 'bg-amber-500 text-white border-amber-600'
+                ? 'bg-emerald-600 text-white border-emerald-700'
                 : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
             }`}
           >
             {isEditing ? (
               <>
-                <Check className="w-3.5 h-3.5" /> Încheie Editarea
+                <Check className="w-3.5 h-3.5" /> Salvează
               </>
             ) : (
               <>
-                <Edit3 className="w-3.5 h-3.5" /> Editează Direct
+                <Edit3 className="w-3.5 h-3.5 text-stone-500" /> Editează
               </>
             )}
           </button>
 
+          {/* BUTON COPIAZĂ */}
           <button
-            onClick={handleSave}
-            title="Salvează modificările"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-colors cursor-pointer"
+            onClick={handleCopyAll}
+            title="Copiază textul schiței"
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-colors cursor-pointer"
           >
-            <Save className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="hidden sm:inline">Salvează</span>
+            <Copy className="w-3.5 h-3.5 text-stone-500" />
+            <span>{copiedText ? 'Copiat!' : 'Copiază'}</span>
           </button>
 
+          {/* BUTON DESCARCĂ WORD */}
           <button
             onClick={handleExportDocx}
             disabled={isExporting}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded-lg shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Descarcă Word (.docx)</span>
+            <span>Word (.docx)</span>
           </button>
 
+          {/* BUTON PRINT */}
           <button
             onClick={() => window.print()}
-            title="Tipărește direct pe hârtie sau exportă ca PDF"
-            className="p-1.5 text-stone-700 hover:bg-stone-100 border border-stone-300 rounded-lg transition-colors cursor-pointer"
+            title="Tipărește pe hârtie sau PDF"
+            className="p-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-300 rounded-lg transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Quick Prompts to Tweak via Methodologist */}
-      <div className="no-print bg-stone-50 border-b border-stone-200 px-4 py-2 flex items-center gap-1.5 overflow-x-auto text-xs">
-        <span className="text-stone-500 font-semibold shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          Optimizări rapide cu Metodistul:
-        </span>
-        <button
-          onClick={() =>
-            onAskMethodologistToTweak(
-              'Te rog să adaptezi această schiță pentru lucru pe grupe interactive și manipulare de cărți sau jetoane pe bănci.'
-            )
-          }
-          className="shrink-0 px-2.5 py-1 bg-white hover:bg-blue-50 text-stone-700 hover:text-blue-800 rounded-md border border-stone-200 transition-colors cursor-pointer"
-        >
-          + Lucru pe grupe & bănci
-        </button>
-        <button
-          onClick={() =>
-            onAskMethodologistToTweak(
-              'Completează cu noi exemple vizuale la tablă, subliniate cu cretă roșie.'
-            )
-          }
-          className="shrink-0 px-2.5 py-1 bg-white hover:bg-blue-50 text-stone-700 hover:text-blue-800 rounded-md border border-stone-200 transition-colors cursor-pointer"
-        >
-          + Marcaje la tablă cu roșu
-        </button>
-        <button
-          onClick={() =>
-            onAskMethodologistToTweak(
-              'Propune un joc suplimentar Wordwall adaptat la finalul orei.'
-            )
-          }
-          className="shrink-0 px-2.5 py-1 bg-white hover:bg-blue-50 text-stone-700 hover:text-blue-800 rounded-md border border-stone-200 transition-colors cursor-pointer"
-        >
-          + Joc Wordwall nou
-        </button>
-      </div>
-
-      {/* Main Printable Document Canvas */}
-      <div className="p-4 sm:p-8 flex justify-center">
-        <div className="w-full max-w-4xl bg-white shadow-lg border border-stone-200 rounded-2xl p-6 sm:p-12 font-sans print-card">
-          {/* Header Title */}
-          <div className="text-center pb-6 border-b-2 border-stone-800 mb-6">
-            <h1 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight">
+      {/* Main Document Content */}
+      <div className="p-4 sm:p-8 flex justify-center flex-1">
+        <div className="w-full max-w-4xl bg-white shadow-md border border-stone-200 rounded-2xl p-6 sm:p-12 font-sans print-card">
+          {/* Titlu Antet Document */}
+          <div className="text-center pb-5 border-b-2 border-stone-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight">
               SCHIȚĂ DE LECȚIE
-            </h1>
+            </h2>
             <p className="text-xs text-stone-500 font-semibold tracking-wide uppercase mt-1">
-              Conform formatului oficial din „schițe de lecție.docx”
+              Structură didactică oficială
             </p>
           </div>
 
-          {/* Antet Metadata Didactică */}
+          {/* Tabelul de Antet Didactic */}
           <div className="border border-stone-300 rounded-xl overflow-hidden mb-6 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-stone-200">
-              {/* Clasa */}
-              <div className="p-3 bg-stone-50/60 flex items-center gap-3">
-                <span className="font-bold text-stone-600 min-w-[110px]">Clasa:</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-stone-200 bg-stone-50/50">
+              <div className="p-3 flex items-center gap-3">
+                <span className="font-bold text-stone-600 min-w-[100px]">Clasa:</span>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedPlan.clasa}
-                    onChange={(e) =>
-                      setEditedPlan({ ...editedPlan, clasa: e.target.value })
-                    }
+                    onChange={(e) => setEditedPlan({ ...editedPlan, clasa: e.target.value })}
                     className="bg-white border rounded px-2 py-1 text-sm flex-1 font-bold"
                   />
                 ) : (
@@ -296,37 +393,31 @@ An școlar 2026 - 2027`;
                 )}
               </div>
 
-              {/* Profesorul */}
-              <div className="p-3 bg-stone-50/60 flex items-center gap-3">
-                <span className="font-bold text-stone-600 min-w-[110px]">Profesorul:</span>
+              <div className="p-3 flex items-center gap-3">
+                <span className="font-bold text-stone-600 min-w-[100px]">Profesorul:</span>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedPlan.profesor}
-                    onChange={(e) =>
-                      setEditedPlan({ ...editedPlan, profesor: e.target.value })
-                    }
-                    className="bg-white border rounded px-2 py-1 text-sm flex-1 font-medium"
+                    onChange={(e) => setEditedPlan({ ...editedPlan, profesor: e.target.value })}
+                    className="bg-white border rounded px-2 py-1 text-sm flex-1 font-semibold"
                   />
                 ) : (
                   <span className="font-semibold text-blue-900">
-                    {editedPlan.profesor || 'Neacsu Roxana'}
+                    {editedPlan.profesor || 'Profesorul Neacsu Roxana'}
                   </span>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-stone-200 border-t border-stone-200">
-              {/* Data */}
               <div className="p-3 flex items-center gap-3">
-                <span className="font-bold text-stone-600 min-w-[110px]">Data:</span>
+                <span className="font-bold text-stone-600 min-w-[100px]">Data:</span>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedPlan.data}
-                    onChange={(e) =>
-                      setEditedPlan({ ...editedPlan, data: e.target.value })
-                    }
+                    onChange={(e) => setEditedPlan({ ...editedPlan, data: e.target.value })}
                     className="bg-white border rounded px-2 py-1 text-sm flex-1"
                   />
                 ) : (
@@ -334,41 +425,30 @@ An școlar 2026 - 2027`;
                 )}
               </div>
 
-              {/* Disciplina */}
               <div className="p-3 flex items-center gap-3">
-                <span className="font-bold text-stone-600 min-w-[110px]">Disciplina:</span>
+                <span className="font-bold text-stone-600 min-w-[100px]">Disciplina:</span>
                 {isEditing ? (
                   <input
                     type="text"
                     value={editedPlan.disciplina}
-                    onChange={(e) =>
-                      setEditedPlan({ ...editedPlan, disciplina: e.target.value })
-                    }
+                    onChange={(e) => setEditedPlan({ ...editedPlan, disciplina: e.target.value })}
                     className="bg-white border rounded px-2 py-1 text-sm flex-1 font-semibold"
                   />
                 ) : (
-                  <span className="font-bold text-blue-900">
-                    {editedPlan.disciplina}
-                  </span>
+                  <span className="font-bold text-blue-900">{editedPlan.disciplina}</span>
                 )}
               </div>
             </div>
 
-            {/* Subiectul Lecției */}
-            <div className="p-4 bg-blue-50/40 border-t border-stone-200 flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="font-bold text-stone-700 min-w-[130px] uppercase text-xs tracking-wider">
+            <div className="p-3.5 bg-blue-50/50 border-t border-stone-200 flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="font-bold text-stone-700 min-w-[120px] uppercase text-xs tracking-wider">
                 Subiectul lecției:
               </span>
               {isEditing ? (
                 <input
                   type="text"
                   value={editedPlan.subiectulLectiei}
-                  onChange={(e) =>
-                    setEditedPlan({
-                      ...editedPlan,
-                      subiectulLectiei: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setEditedPlan({ ...editedPlan, subiectulLectiei: e.target.value })}
                   className="bg-white border border-stone-300 rounded px-2 py-1 text-base font-bold text-blue-950 flex-1"
                 />
               ) : (
@@ -378,33 +458,28 @@ An școlar 2026 - 2027`;
               )}
             </div>
 
-            {/* Tipul Lecției */}
-            <div className="p-3 bg-stone-50/60 border-t border-stone-200 flex items-center gap-3">
-              <span className="font-bold text-stone-600 min-w-[110px]">Tipul lecției:</span>
+            <div className="p-3 bg-stone-50/50 border-t border-stone-200 flex items-center gap-3">
+              <span className="font-bold text-stone-600 min-w-[100px]">Tipul lecției:</span>
               {isEditing ? (
                 <input
                   type="text"
                   value={editedPlan.tipulLectiei}
-                  onChange={(e) =>
-                    setEditedPlan({ ...editedPlan, tipulLectiei: e.target.value })
-                  }
+                  onChange={(e) => setEditedPlan({ ...editedPlan, tipulLectiei: e.target.value })}
                   className="bg-white border rounded px-2 py-1 text-sm flex-1"
                 />
               ) : (
-                <span className="font-medium text-stone-800">
-                  {editedPlan.tipulLectiei}
-                </span>
+                <span className="font-medium text-stone-800">{editedPlan.tipulLectiei}</span>
               )}
             </div>
           </div>
 
           {/* Obiective Operaționale */}
-          <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50/30">
+          <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50/40">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wide flex items-center gap-2">
+              <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-700" />
                 Obiective operaționale:
-              </h2>
+              </h3>
               {isEditing && (
                 <button
                   onClick={addObjective}
@@ -415,12 +490,10 @@ An școlar 2026 - 2027`;
               )}
             </div>
 
-            <ul className="space-y-2 mt-3">
+            <ul className="space-y-2 mt-2">
               {editedPlan.obiectiveOperationale?.map((obj, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-stone-800">
-                  <span className="font-bold text-blue-700 shrink-0 select-none">
-                    •
-                  </span>
+                <li key={i} className="flex items-start gap-2 text-sm text-stone-800">
+                  <span className="font-bold text-blue-700 shrink-0 select-none">•</span>
                   {isEditing ? (
                     <div className="flex items-center gap-2 flex-1">
                       <input
@@ -429,10 +502,7 @@ An școlar 2026 - 2027`;
                         onChange={(e) => {
                           const updated = [...editedPlan.obiectiveOperationale];
                           updated[i] = e.target.value;
-                          setEditedPlan({
-                            ...editedPlan,
-                            obiectiveOperationale: updated,
-                          });
+                          setEditedPlan({ ...editedPlan, obiectiveOperationale: updated });
                         }}
                         className="bg-white border border-stone-300 rounded px-2 py-1 text-sm flex-1"
                       />
@@ -453,13 +523,12 @@ An școlar 2026 - 2027`;
 
           {/* Activitățile Planificate */}
           <div className="mb-6">
-            <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-700" />
               Activitățile planificate (Desfășurarea pe etape):
-            </h2>
+            </h3>
 
-            {/* Table layout matching the official Word document */}
-            <div className="border border-stone-300 rounded-xl overflow-hidden shadow-xs">
+            <div className="border border-stone-300 rounded-xl overflow-hidden shadow-2xs">
               <table className="w-full text-left border-collapse text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-stone-900 text-white font-semibold divide-x divide-stone-800">
@@ -467,16 +536,11 @@ An școlar 2026 - 2027`;
                     <th className="p-3 w-5/12">
                       Activitatea profesorului
                       <div className="text-[11px] font-normal text-stone-300">
-                        (Exemple la tablă, marcaje cu roșu)
+                        (La tablă, marcat cu roșu)
                       </div>
                     </th>
-                    <th className="p-3 w-1/4">
-                      Activitatea elevilor
-                      <div className="text-[11px] font-normal text-stone-300">
-                        (Cărți pe bancă, lucru practic)
-                      </div>
-                    </th>
-                    <th className="p-3 w-1/6">Metode & Mijloace</th>
+                    <th className="p-3 w-1/4">Activitatea elevilor</th>
+                    <th className="p-3 w-1/6">Metode</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-200">
@@ -484,33 +548,28 @@ An școlar 2026 - 2027`;
                     <tr
                       key={stage.id || idx}
                       className={`divide-x divide-stone-200 ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
+                        idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'
                       }`}
                     >
-                      {/* Nume Etapă & Timp */}
-                      <td className="p-3.5 align-top">
+                      <td className="p-3 align-top">
                         {isEditing ? (
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <input
                               type="text"
                               value={stage.numeEtapa}
-                              onChange={(e) =>
-                                updateStage(idx, 'numeEtapa', e.target.value)
-                              }
-                              className="font-bold text-xs bg-white border border-stone-300 rounded px-1.5 py-0.5 w-full"
+                              onChange={(e) => updateStage(idx, 'numeEtapa', e.target.value)}
+                              className="font-bold text-xs bg-white border rounded px-1.5 py-0.5 w-full"
                             />
                             <input
                               type="text"
                               value={stage.timpAlocat}
-                              onChange={(e) =>
-                                updateStage(idx, 'timpAlocat', e.target.value)
-                              }
-                              className="text-xs text-stone-600 bg-white border border-stone-300 rounded px-1.5 py-0.5 w-20"
+                              onChange={(e) => updateStage(idx, 'timpAlocat', e.target.value)}
+                              className="text-xs text-stone-600 bg-white border rounded px-1.5 py-0.5 w-20"
                             />
                           </div>
                         ) : (
                           <>
-                            <div className="font-bold text-stone-900 text-sm leading-snug">
+                            <div className="font-bold text-stone-900 text-xs sm:text-sm leading-snug">
                               {stage.numeEtapa}
                             </div>
                             <div className="inline-block mt-1 text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
@@ -520,105 +579,62 @@ An școlar 2026 - 2027`;
                         )}
 
                         {stage.resurseFizice && (
-                          <div className="mt-2 text-xs bg-emerald-50 border border-emerald-200 rounded p-1.5 text-emerald-900">
-                            <strong className="block font-bold">
-                              Materiale pe bancă:
-                            </strong>
-                            {isEditing ? (
-                              <textarea
-                                value={stage.resurseFizice}
-                                onChange={(e) =>
-                                  updateStage(idx, 'resurseFizice', e.target.value)
-                                }
-                                rows={2}
-                                className="w-full text-xs p-1 border rounded"
-                              />
-                            ) : (
-                              <span>{stage.resurseFizice}</span>
-                            )}
+                          <div className="mt-2 text-xs bg-stone-100 border border-stone-200 rounded p-1.5 text-stone-700">
+                            <strong className="block font-bold">Pe bancă:</strong>
+                            <span>{stage.resurseFizice}</span>
                           </div>
                         )}
                       </td>
 
-                      {/* Activitatea Profesorului */}
-                      <td className="p-3.5 align-top leading-relaxed text-stone-800">
+                      <td className="p-3 align-top leading-relaxed text-stone-800">
                         {isEditing ? (
                           <textarea
                             value={stage.activitateaProfesorului}
-                            onChange={(e) =>
-                              updateStage(
-                                idx,
-                                'activitateaProfesorului',
-                                e.target.value
-                              )
-                            }
-                            rows={5}
+                            onChange={(e) => updateStage(idx, 'activitateaProfesorului', e.target.value)}
+                            rows={4}
                             className="w-full text-xs p-1.5 border rounded"
                           />
                         ) : (
-                          <div className="whitespace-pre-line text-xs sm:text-sm font-normal">
+                          <div className="whitespace-pre-line text-xs sm:text-sm">
                             {stage.activitateaProfesorului}
                           </div>
                         )}
 
                         {stage.marcajeTablaVizuale && (
-                          <div className="mt-2.5 p-2 bg-red-50/80 border-l-4 border-red-600 rounded-r text-xs text-red-950">
+                          <div className="mt-2 p-2 bg-red-50 border-l-3 border-red-600 rounded-r text-xs text-red-950">
                             <strong className="font-bold block text-red-800">
-                              La tablă (vizual / marcat cu roșu):
+                              La tablă (scris cu roșu):
                             </strong>
-                            {isEditing ? (
-                              <textarea
-                                value={stage.marcajeTablaVizuale}
-                                onChange={(e) =>
-                                  updateStage(
-                                    idx,
-                                    'marcajeTablaVizuale',
-                                    e.target.value
-                                  )
-                                }
-                                rows={2}
-                                className="w-full text-xs p-1 border rounded mt-1"
-                              />
-                            ) : (
-                              <span className="italic">
-                                {stage.marcajeTablaVizuale}
-                              </span>
-                            )}
+                            <span className="italic">{stage.marcajeTablaVizuale}</span>
                           </div>
                         )}
                       </td>
 
-                      {/* Activitatea Elevilor */}
-                      <td className="p-3.5 align-top leading-relaxed text-stone-800">
+                      <td className="p-3 align-top leading-relaxed text-stone-800">
                         {isEditing ? (
                           <textarea
                             value={stage.activitateaElevilor}
-                            onChange={(e) =>
-                              updateStage(idx, 'activitateaElevilor', e.target.value)
-                            }
-                            rows={4}
+                            onChange={(e) => updateStage(idx, 'activitateaElevilor', e.target.value)}
+                            rows={3}
                             className="w-full text-xs p-1.5 border rounded"
                           />
                         ) : (
-                          <div className="whitespace-pre-line text-xs sm:text-sm font-normal">
+                          <div className="whitespace-pre-line text-xs sm:text-sm">
                             {stage.activitateaElevilor}
                           </div>
                         )}
                       </td>
 
-                      {/* Metode & Mijloace */}
-                      <td className="p-3.5 align-top text-xs text-stone-600">
+                      <td className="p-3 align-top text-xs text-stone-600">
                         {isEditing ? (
                           <textarea
                             value={stage.metodeMijloace}
-                            onChange={(e) =>
-                              updateStage(idx, 'metodeMijloace', e.target.value)
-                            }
-                            rows={3}
+                            onChange={(e) => updateStage(idx, 'metodeMijloace', e.target.value)}
+                            rows={2}
                             className="w-full text-xs p-1 border rounded"
                           />
                         ) : (
-                          <span className="leading-snug block">{stage.metodeMijloace}</span>
+                          <span>{stage.metodeMijloace}</span>
                         )}
                       </td>
                     </tr>
@@ -628,76 +644,32 @@ An școlar 2026 - 2027`;
             </div>
           </div>
 
-          {/* Feedback la finalul orei */}
-          <div className="mb-6 p-5 rounded-xl bg-stone-50 border border-stone-200">
-            <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+          {/* Feedback Final & Joc Wordwall */}
+          <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-200">
+            <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
               Feedback la finalul orei:
-            </h2>
+            </h3>
 
-            <div className="space-y-3 text-sm text-stone-800">
+            <div className="space-y-2.5 text-xs sm:text-sm text-stone-800">
               <div className="flex items-start gap-2">
-                <span className="font-bold text-stone-700 min-w-[160px]">
-                  Timp alocat:
-                </span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedPlan.feedbackFinal?.timpAlocat || '5 min'}
-                    onChange={(e) =>
-                      setEditedPlan({
-                        ...editedPlan,
-                        feedbackFinal: {
-                          ...editedPlan.feedbackFinal,
-                          timpAlocat: e.target.value,
-                        },
-                      })
-                    }
-                    className="bg-white border rounded px-2 py-0.5 text-xs font-semibold"
-                  />
-                ) : (
-                  <span className="font-bold text-blue-800">
-                    {editedPlan.feedbackFinal?.timpAlocat || '5 min'}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="font-bold text-stone-700 min-w-[160px]">
+                <span className="font-bold text-stone-700 min-w-[150px]">
                   Metoda de verificare:
                 </span>
-                {isEditing ? (
-                  <textarea
-                    value={editedPlan.feedbackFinal?.metodaVerificare || ''}
-                    onChange={(e) =>
-                      setEditedPlan({
-                        ...editedPlan,
-                        feedbackFinal: {
-                          ...editedPlan.feedbackFinal,
-                          metodaVerificare: e.target.value,
-                        },
-                      })
-                    }
-                    rows={2}
-                    className="bg-white border rounded px-2 py-0.5 text-xs flex-1"
-                  />
-                ) : (
-                  <div className="flex-1 whitespace-pre-line font-medium">
-                    {editedPlan.feedbackFinal?.metodaVerificare ||
-                      'Metoda "Arată și spune", recapitulare'}
-                  </div>
-                )}
+                <span className="font-medium">
+                  {editedPlan.feedbackFinal?.metodaVerificare || 'Metoda «Arată și spune»'}
+                </span>
               </div>
 
-              {/* Wordwall Interactive Banner */}
-              <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+              {/* Joc Wordwall */}
+              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl">
                 <div className="flex items-center gap-2 font-bold text-blue-900 text-xs mb-1">
-                  <Gamepad2 className="w-4 h-4 text-indigo-600" />
-                  <span>Jocuri didactice interactive (Wordwall):</span>
+                  <Gamepad2 className="w-4 h-4 text-blue-700" />
+                  <span>Joc didactic interactiv (Wordwall):</span>
                 </div>
                 <p className="text-xs text-stone-700 mb-2">
                   {editedPlan.feedbackFinal?.jocuriDigitaleSiInteractive ||
-                    'Joc Wordwall adaptat conținutului'}
+                    'Joc interactiv adaptat temei lecției.'}
                 </p>
 
                 {editedPlan.feedbackFinal?.linkWordwallExemplu && (
@@ -705,39 +677,21 @@ An școlar 2026 - 2027`;
                     href={editedPlan.feedbackFinal.linkWordwallExemplu}
                     target="_blank"
                     rel="noreferrer"
-                    className="no-print inline-flex items-center gap-2 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors"
+                    className="no-print inline-flex items-center gap-1.5 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition-colors"
                   >
                     <span>Deschide jocul Wordwall</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
 
-              <div className="flex items-start gap-2 pt-1">
-                <span className="font-bold text-stone-700 min-w-[160px]">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-stone-700 min-w-[150px]">
                   Aprecieri și concluzii:
                 </span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedPlan.feedbackFinal?.aprecieriSiConcluzii || ''}
-                    onChange={(e) =>
-                      setEditedPlan({
-                        ...editedPlan,
-                        feedbackFinal: {
-                          ...editedPlan.feedbackFinal,
-                          aprecieriSiConcluzii: e.target.value,
-                        },
-                      })
-                    }
-                    className="bg-white border rounded px-2 py-0.5 text-xs flex-1"
-                  />
-                ) : (
-                  <span className="italic text-stone-600">
-                    {editedPlan.feedbackFinal?.aprecieriSiConcluzii ||
-                      'Aprecieri verbale încurajatoare'}
-                  </span>
-                )}
+                <span className="italic text-stone-600">
+                  {editedPlan.feedbackFinal?.aprecieriSiConcluzii || 'Aprecieri verbale pozitive'}
+                </span>
               </div>
             </div>
           </div>
@@ -745,22 +699,147 @@ An școlar 2026 - 2027`;
           {/* Schița Tablei */}
           {editedPlan.schemaTablei && (
             <div className="mb-6">
-              <h2 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wide mb-2 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
                 Schița tablei:
-              </h2>
-              <div className="p-4 bg-stone-900 text-stone-100 rounded-xl border-2 border-stone-800 font-mono text-xs whitespace-pre-wrap shadow-inner leading-relaxed">
+              </h3>
+              <div className="p-3.5 bg-stone-900 text-stone-100 rounded-xl border border-stone-800 font-mono text-xs whitespace-pre-wrap leading-relaxed">
                 {editedPlan.schemaTablei}
               </div>
             </div>
           )}
 
-          {/* Footer Official Year */}
+          {/* Subsol Oficial */}
           <div className="pt-6 border-t border-stone-300 text-center text-xs font-bold text-stone-500 uppercase tracking-wider">
             An școlar 2026 - 2027
           </div>
         </div>
       </div>
+
+      {/* CONFIRMARE ȘTERGERE MODAL */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-2xs">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-stone-200">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-center text-stone-900 mb-2">
+              Ștergeți schița de lecție?
+            </h3>
+            <p className="text-xs text-stone-600 text-center mb-6 leading-relaxed">
+              Schița curentă va fi eliminată din vizualizator. Veți putea genera o schiță nouă imediat.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  onDeleteLesson();
+                }}
+                className="flex-1 px-4 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors"
+              >
+                Da, șterge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REGENERARE CU OPȚIUNI */}
+      {showRegenerateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-2xs">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-stone-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <RotateCcw className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-base text-stone-900">
+                  Regenerare Schiță
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowRegenerateModal(false)}
+                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600 mb-4 leading-relaxed">
+              Cum doriți să regenerăm schița pentru <strong>{editedPlan.subiectulLectiei}</strong>?
+            </p>
+
+            {/* Quick choices */}
+            <div className="space-y-2 mb-4">
+              <button
+                onClick={() => triggerRegenerate('Regenerează complet cu idei, exemple și jocuri noi.')}
+                className="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-semibold text-stone-800 transition-all"
+              >
+                ✨ Regenerare completă (abordare nouă & exerciții proaspete)
+              </button>
+
+              <button
+                onClick={() =>
+                  triggerRegenerate('Include mai multe jocuri didactice antrenante și jocuri Wordwall suplimentare.')
+                }
+                className="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-semibold text-stone-800 transition-all"
+              >
+                🎮 Accent pe jocuri interactive & Wordwall
+              </button>
+
+              <button
+                onClick={() =>
+                  triggerRegenerate('Adaptează activitățile pentru lucru pe grupe/echipe și manipulare de cărți/fișe pe bănci.')
+                }
+                className="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-xs font-semibold text-stone-800 transition-all"
+              >
+                👥 Accent pe lucru pe grupe și materiale pe bancă
+              </button>
+            </div>
+
+            {/* Custom input */}
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-stone-600 mb-1">
+                Sau specificați cerințe speciale:
+              </label>
+              <textarea
+                value={customRegenInstruction}
+                onChange={(e) => setCustomRegenInstruction(e.target.value)}
+                placeholder="Ex: Vreau mai multe exerciții la tablă subliniate cu cretă roșie și un ritm mai alert..."
+                rows={2}
+                className="w-full text-xs p-2.5 border border-stone-300 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRegenerateModal(false)}
+                className="flex-1 px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl transition-colors"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={() =>
+                  triggerRegenerate(
+                    customRegenInstruction.trim() ||
+                      'Regenerează schița cu idei noi conform formatului oficial din schițe de lecție.docx'
+                  )
+                }
+                className="flex-1 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Regenerează Schița</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

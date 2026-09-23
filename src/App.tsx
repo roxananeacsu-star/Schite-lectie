@@ -2,17 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ChatPanel } from './components/ChatPanel';
 import { LessonPlanView } from './components/LessonPlanView';
-import { OfficialTemplateView } from './components/OfficialTemplateView';
 import { SavedPlansView } from './components/SavedPlansView';
 import { QuickLessonCreatorModal } from './components/QuickLessonCreatorModal';
 import { ChatMessage, LessonPlan, UploadedAttachment } from './types';
-import { SAMPLE_LESSON_PLANS } from './data/curriculumData';
 
-const LOCAL_STORAGE_KEY = 'metodist_primar_saved_plans_v2';
+const LOCAL_STORAGE_KEY = 'metodist_primar_saved_plans_v4';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'lesson' | 'template' | 'saved'>('lesson');
-  const [currentLesson, setCurrentLesson] = useState<LessonPlan | null>(SAMPLE_LESSON_PLANS[0]);
+  const [activeTab, setActiveTab] = useState<'lesson' | 'chat' | 'saved'>('lesson');
+  const [currentLesson, setCurrentLesson] = useState<LessonPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [savedPlans, setSavedPlans] = useState<LessonPlan[]>([]);
   const [isQuickCreatorOpen, setIsQuickCreatorOpen] = useState(false);
@@ -22,39 +20,34 @@ export default function App() {
     {
       id: 'msg_welcome',
       sender: 'assistant',
-      text: `Bună ziua! Sunt Metodistul dumneavoastră didactic și Expert în Învățământul Primar.
+      text: `Bună ziua, doamna profesor Neacsu Roxana! Sunt asistentul dumneavoastră metodic pentru învățământul primar.
 
-Vă asist cu bucurie în proiectarea unor schițe de lecție interactive, captivante și riguros structurate, adaptate specificului vârstei școlare mici (Clasa Pregătitoare, Clasa I, a II-a, a III-a, a IV-a).
+Vă asist cu drag în proiectarea schițelor de lecție. Structura metodică din documentul oficial «schițe de lecție.docx» este utilizată automat ca reper pedagogic pentru generarea oricărei teme solicitate.
 
-Cum doriți să începem?
-1. Apăsați butonul „Generează Rapid” pentru a configura o lecție nouă în 3 pași simpli (clasă, disciplină, subiect).
-2. Sau scrieți-mi direct în chat ori atașați o poză/fișier cu o pagină din manual.
-3. Puteți explora oricând cele 3 schițe de referință din bara de sus (Componentele cărții, Semne de punctuație, Numerele naturale 0-10 000).
-
-Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», includ obiective măsurabile, etape clare, exemple cu roșu la tablă și jocuri interactive Wordwall!`,
+• Apăsați pe „Lecție Nouă” sau scrieți direct tema în chat pentru a genera o schiță completă.
+• Dacă o schiță generată nu este pe placul dumneavoastră, folosiți butonul «Șterge» pentru a o elimina sau «Regenerează» pentru a încerca alte activități, exerciții și jocuri didactice!`,
       timestamp: new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
       suggestedPrompts: [
-        'Vreau o schiță nouă la Limba română, Clasa a III-a',
+        'Lecție nouă Limba română Clasa a III-a: Substantivul',
         'Lecție MEM Clasa a II-a: Adunarea cu trecere peste ordin',
         'Științe ale naturii Clasa a IV-a: Părțile plantei',
-        'Deschide formatul oficial schițe de lecție.docx',
       ],
     },
   ]);
 
-  // Load saved plans on mount
+  // Load saved plans on mount (strictly user-saved, not static templates)
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        setSavedPlans(JSON.parse(stored));
-      } else {
-        setSavedPlans(SAMPLE_LESSON_PLANS);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SAMPLE_LESSON_PLANS));
+        const parsed: LessonPlan[] = JSON.parse(stored);
+        setSavedPlans(parsed);
+        if (parsed.length > 0) {
+          setCurrentLesson(parsed[0]);
+        }
       }
     } catch (e) {
-      console.error('Eroare la citirea din localStorage:', e);
-      setSavedPlans(SAMPLE_LESSON_PLANS);
+      console.error('Eroare citire localStorage:', e);
     }
   }, []);
 
@@ -83,6 +76,16 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
     });
   };
 
+  const handleDeleteLesson = (id?: string) => {
+    const targetId = id || currentLesson?.id;
+    if (targetId) {
+      deletePlanFromStorage(targetId);
+    }
+    if (!id || currentLesson?.id === id) {
+      setCurrentLesson(null);
+    }
+  };
+
   const handleSendMessage = async (text: string, attachments: UploadedAttachment[]) => {
     const userMessage: ChatMessage = {
       id: 'msg_' + Date.now(),
@@ -107,17 +110,16 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Serverul a răspuns cu codul ${res.status}`);
-      }
+      const data = await res.json().catch(() => ({}));
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.reply || data.error || 'Serviciul a întâmpinat o problemă.');
+      }
 
       const assistantMessage: ChatMessage = {
         id: 'msg_ai_' + Date.now(),
         sender: 'assistant',
-        text: data.reply || 'Am analizat solicitarea dumneavoastră.',
+        text: data.reply || 'Am generat schița conform cerințelor dumneavoastră.',
         timestamp: new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
         missingQuestions: data.needsMoreInfo ? data.clarifyingQuestions : undefined,
         lessonPlan: data.lessonPlan || undefined,
@@ -129,13 +131,19 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
       if (data.lessonPlan) {
         setCurrentLesson(data.lessonPlan);
         savePlanToStorage(data.lessonPlan);
+        setActiveTab('lesson');
       }
     } catch (err: any) {
-      console.error('Eroare trimitere mesaj:', err);
+      console.error('Eroare comunicare metodist:', err);
+      let userFriendlyText =
+        'A apărut o mică problemă temporară. Puteți reîncerca generarea folosind butonul de mai jos.';
+      if (err.message && !err.message.includes('{')) {
+        userFriendlyText = err.message;
+      }
       const errorMessage: ChatMessage = {
         id: 'msg_err_' + Date.now(),
         sender: 'assistant',
-        text: `A apărut o problemă la comunicarea cu metodistul: ${err.message}. Vă rugăm să reîncercați.`,
+        text: userFriendlyText,
         timestamp: new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -144,11 +152,32 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
     }
   };
 
-  const handleApplyPrompt = (prompt: string) => {
-    if (prompt.includes('Deschide formatul oficial')) {
-      setActiveTab('template');
+  const handleRegenerateLesson = async (param?: string | LessonPlan) => {
+    let targetPlan = currentLesson;
+    let instruction = '';
+
+    if (typeof param === 'object' && param !== null) {
+      targetPlan = param;
+    } else if (typeof param === 'string') {
+      instruction = param;
+    }
+
+    if (!targetPlan && !instruction) {
+      setIsQuickCreatorOpen(true);
       return;
     }
+
+    const prompt = instruction
+      ? targetPlan
+        ? `Ajustează și regenerează schița de lecție pentru Clasa ${targetPlan.clasa}, Disciplina ${targetPlan.disciplina}, Subiectul „${targetPlan.subiectulLectiei}”. Indicații didactice: ${instruction}`
+        : instruction
+      : `Regenerează schița de lecție pentru Clasa ${targetPlan!.clasa}, Disciplina ${targetPlan!.disciplina}, Subiectul „${targetPlan!.subiectulLectiei}” (${targetPlan!.tipulLectiei}). Propune o abordare didactică nouă, activități antrenante pe bancă, marcaje cu cretă roșie la tablă și un joc Wordwall adaptat, respectând structura metodică oficială.`;
+
+    setActiveTab('lesson');
+    await handleSendMessage(prompt, []);
+  };
+
+  const handleApplyPrompt = (prompt: string) => {
     handleSendMessage(prompt, []);
   };
 
@@ -157,36 +186,39 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
     setActiveTab('lesson');
   };
 
-  const handleLoadSample = (sample: LessonPlan) => {
-    setCurrentLesson(sample);
-    setActiveTab('lesson');
-  };
-
   return (
     <div className="flex flex-col h-screen bg-stone-100 text-stone-900 font-sans overflow-hidden">
-      {/* Top Header */}
+      {/* Header Simplificat */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentLesson={currentLesson}
         onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
-        onSelectSampleLesson={(sample) => {
-          setCurrentLesson(sample);
-          setActiveTab('lesson');
-        }}
         savedCount={savedPlans.length}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden">
-        {/* Split Screen for Desktop: Chat on Left, Content on Right */}
-        <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
-          {/* Left: Chat Panel */}
-          <div
-            className={`w-full lg:w-5/12 xl:w-4/12 h-full flex flex-col ${
-              activeTab === 'chat' ? 'flex' : 'hidden lg:flex'
-            }`}
-          >
+      {/* Spațiu Principal de Lucru */}
+      <main className="flex-1 overflow-hidden relative">
+        {activeTab === 'lesson' && (
+          <div className="h-full w-full">
+            <LessonPlanView
+              lesson={currentLesson}
+              onUpdateLesson={(updated) => {
+                setCurrentLesson(updated);
+                savePlanToStorage(updated);
+              }}
+              onSaveToHistory={savePlanToStorage}
+              onDeleteLesson={handleDeleteLesson}
+              onRegenerateLesson={handleRegenerateLesson}
+              isRegenerating={isLoading}
+              onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
+              onSwitchToChat={() => setActiveTab('chat')}
+            />
+          </div>
+        )}
+
+        {activeTab === 'chat' && (
+          <div className="h-full max-w-4xl mx-auto flex flex-col bg-white shadow-xs">
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
@@ -194,47 +226,29 @@ Toate schițele sunt conforme cu formatul oficial «schițe de lecție.docx», i
               onOpenLesson={handleOpenLesson}
               currentLesson={currentLesson}
               onApplyPromptSuggestion={handleApplyPrompt}
+              onDeleteLesson={handleDeleteLesson}
+              onRegenerateLesson={(plan) => handleRegenerateLesson(plan)}
             />
           </div>
+        )}
 
-          {/* Right: Tabbed Content (Lesson Plan / Official Template / Saved Collection) */}
-          <div
-            className={`flex-1 h-full flex flex-col overflow-hidden ${
-              activeTab === 'chat' ? 'hidden lg:flex' : 'flex'
-            }`}
-          >
-            {activeTab === 'template' ? (
-              <OfficialTemplateView onLoadSample={handleLoadSample} />
-            ) : activeTab === 'saved' ? (
-              <SavedPlansView
-                savedPlans={savedPlans}
-                onOpenLesson={handleOpenLesson}
-                onDeletePlan={deletePlanFromStorage}
-              />
-            ) : (
-              <LessonPlanView
-                lesson={currentLesson}
-                onUpdateLesson={(updated) => {
-                  setCurrentLesson(updated);
-                  savePlanToStorage(updated);
-                }}
-                onSaveToHistory={savePlanToStorage}
-                onAskMethodologistToTweak={(instruction) => {
-                  setActiveTab('chat');
-                  handleSendMessage(instruction, []);
-                }}
-              />
-            )}
+        {activeTab === 'saved' && (
+          <div className="h-full max-w-4xl mx-auto p-4 sm:p-6 overflow-y-auto">
+            <SavedPlansView
+              savedPlans={savedPlans}
+              onOpenLesson={handleOpenLesson}
+              onDeletePlan={deletePlanFromStorage}
+            />
           </div>
-        </div>
+        )}
       </main>
 
-      {/* Quick Lesson Creator Wizard Modal */}
+      {/* Modal Generator Rapid de Lecție */}
       <QuickLessonCreatorModal
         isOpen={isQuickCreatorOpen}
         onClose={() => setIsQuickCreatorOpen(false)}
         onSubmit={(prompt) => {
-          setActiveTab('chat');
+          setActiveTab('lesson');
           handleSendMessage(prompt, []);
         }}
       />
