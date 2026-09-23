@@ -67,7 +67,7 @@ export interface LessonPlan {
 export interface UploadedAttachment {
   id: string;
   name: string;
-  type: 'image' | 'pdf' | 'docx' | 'text';
+  type: 'image' | 'pdf' | 'docx' | 'doc' | 'text' | 'file';
   size: number;
   previewUrl?: string;
   dataBase64?: string;

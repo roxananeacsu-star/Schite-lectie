@@ -1,14 +1,28 @@
 import mammoth from 'mammoth';
 import { UploadedAttachment } from '../types';
 
+/**
+ * Procesează un fișier de orice tip încărcat de cadru didactic
+ * (foto manual, fișă Word, programă PDF, prezentare, text etc.)
+ */
 export async function processUploadedFile(file: File): Promise<UploadedAttachment> {
   const fileId = 'att_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
   const fileName = file.name;
   const fileSize = file.size;
-  const mimeType = file.type;
+  const mimeType = file.type || '';
+  const lowerName = fileName.toLowerCase();
 
-  // Image files
-  if (mimeType.startsWith('image/')) {
+  // 1. Fișiere de tip Imagine (fotografii manual, pagini de caiet, scanări etc.)
+  if (
+    mimeType.startsWith('image/') ||
+    lowerName.endsWith('.png') ||
+    lowerName.endsWith('.jpg') ||
+    lowerName.endsWith('.jpeg') ||
+    lowerName.endsWith('.webp') ||
+    lowerName.endsWith('.heic') ||
+    lowerName.endsWith('.gif') ||
+    lowerName.endsWith('.bmp')
+  ) {
     const base64Data = await readFileAsBase64(file);
     return {
       id: fileId,
@@ -21,8 +35,8 @@ export async function processUploadedFile(file: File): Promise<UploadedAttachmen
     };
   }
 
-  // PDF files
-  if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+  // 2. Fișiere PDF (programă școlară, manuale digitale PDF, fișe)
+  if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
     const base64Data = await readFileAsBase64(file);
     return {
       id: fileId,
@@ -34,10 +48,10 @@ export async function processUploadedFile(file: File): Promise<UploadedAttachmen
     };
   }
 
-  // Word docx files
+  // 3. Documente Word DOCX (proiecte didactice anterioare, fișe de lucru)
   if (
     mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    fileName.toLowerCase().endsWith('.docx')
+    lowerName.endsWith('.docx')
   ) {
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -48,10 +62,9 @@ export async function processUploadedFile(file: File): Promise<UploadedAttachmen
         type: 'docx',
         size: fileSize,
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        extractedText: result.value || '',
+        extractedText: result.value || `[Conținut extras din document Word: ${fileName}]`,
       };
     } catch {
-      // Fallback
       return {
         id: fileId,
         name: fileName,
@@ -62,28 +75,91 @@ export async function processUploadedFile(file: File): Promise<UploadedAttachmen
     }
   }
 
-  // Word doc (older binary) or text file
-  if (fileName.toLowerCase().endsWith('.doc') || mimeType.includes('msword')) {
-    // Binary doc format
+  // 4. Documente Word vechi (.doc) sau Rich Text Format (.rtf)
+  if (
+    lowerName.endsWith('.doc') ||
+    lowerName.endsWith('.rtf') ||
+    mimeType.includes('msword') ||
+    mimeType.includes('rtf')
+  ) {
     const text = await readFileAsTextFallback(file);
     return {
       id: fileId,
       name: fileName,
       type: 'doc' as any,
       size: fileSize,
-      extractedText: text.slice(0, 5000),
+      mimeType: mimeType || 'application/msword',
+      extractedText: text.slice(0, 10000),
     };
   }
 
-  // Text fallback
-  const textContent = await file.text();
+  // 5. Fișiere Text, Markdown, CSV etc.
+  if (
+    mimeType.startsWith('text/') ||
+    lowerName.endsWith('.txt') ||
+    lowerName.endsWith('.md') ||
+    lowerName.endsWith('.csv')
+  ) {
+    try {
+      const textContent = await file.text();
+      return {
+        id: fileId,
+        name: fileName,
+        type: 'text',
+        size: fileSize,
+        mimeType: mimeType || 'text/plain',
+        extractedText: textContent,
+      };
+    } catch {
+      // Fallback
+    }
+  }
+
+  // 6. Orice alt format (prezentări, tabele, etc.) - Încercare citire text sau fallback
+  try {
+    const textFallback = await file.text();
+    if (textFallback && textFallback.length > 0 && !/[\x00-\x08\x0E-\x1F]/.test(textFallback.slice(0, 100))) {
+      return {
+        id: fileId,
+        name: fileName,
+        type: 'text',
+        size: fileSize,
+        mimeType: mimeType || 'application/octet-stream',
+        extractedText: textFallback.slice(0, 10000),
+      };
+    }
+  } catch {
+    // Binary file fallback
+  }
+
+  const base64Data = await readFileAsBase64(file);
   return {
     id: fileId,
     name: fileName,
     type: 'text',
     size: fileSize,
-    extractedText: textContent,
+    mimeType: mimeType || 'application/octet-stream',
+    extractedText: `[Fișier resursă atașat: ${fileName} (${Math.round(fileSize / 1024)} KB)]`,
   };
+}
+
+/**
+ * Procesează simultan un grup de fișiere de orice tip
+ */
+export async function processMultipleFiles(files: FileList | File[]): Promise<UploadedAttachment[]> {
+  const fileArray = Array.from(files);
+  const results: UploadedAttachment[] = [];
+
+  for (const file of fileArray) {
+    try {
+      const attachment = await processUploadedFile(file);
+      results.push(attachment);
+    } catch (err) {
+      console.error(`Eroare la procesarea fișierului ${file.name}:`, err);
+    }
+  }
+
+  return results;
 }
 
 function readFileAsBase64(file: File): Promise<string> {

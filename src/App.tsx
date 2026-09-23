@@ -286,13 +286,13 @@ Vă asist cu drag în proiectarea schițelor de lecție. Structura metodică din
         )}
       </main>
 
-      {/* Modal Generator Rapid de Lecție */}
+      {/* Modal Generator Rapid de Lecție cu Atașare Resurse Multiple */}
       <QuickLessonCreatorModal
         isOpen={isQuickCreatorOpen}
         onClose={() => setIsQuickCreatorOpen(false)}
-        onSubmit={(prompt) => {
+        onSubmit={(prompt, attachments) => {
           setActiveTab('lesson');
-          handleSendMessage(prompt, []);
+          handleSendMessage(prompt, attachments || []);
         }}
       />
     </div>

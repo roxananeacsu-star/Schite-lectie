@@ -154,14 +154,16 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Buton Lecție Nouă */}
+          {/* Buton Lecție Nouă cu opțiune atașare resurse */}
           <button
             onClick={onOpenQuickCreator}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+            title="Proiectează o schiță nouă cu opțiune de atașare fișiere (foto manual, programă PDF, fișe)"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-extrabold text-white bg-blue-700 hover:bg-blue-800 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
           >
             <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Lecție Nouă</span>
-            <span className="sm:hidden">Nou</span>
+            <Paperclip className="w-3.5 h-3.5 text-blue-200" />
+            <span className="hidden md:inline">Lecție Nouă (+ Resurse)</span>
+            <span className="md:hidden">Lecție Nouă</span>
           </button>
 
           {currentLesson && (

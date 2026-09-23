@@ -16,9 +16,11 @@ import {
   Info,
   RotateCcw,
   Trash2,
+  UploadCloud,
+  File,
 } from 'lucide-react';
 import { ChatMessage, UploadedAttachment, LessonPlan } from '../types';
-import { processUploadedFile } from '../utils/fileParser';
+import { processMultipleFiles } from '../utils/fileParser';
 import { downloadBlob, generateDocxBlob } from '../utils/docxExport';
 
 interface ChatPanelProps {
@@ -45,6 +47,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [inputText, setInputText] = useState('');
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,18 +63,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const newAttachments: UploadedAttachment[] = [];
-    for (let i = 0; i < files.length; i++) {
-      try {
-        const att = await processUploadedFile(files[i]);
-        newAttachments.push(att);
-      } catch (err) {
-        console.error('Eroare procesare fișier:', err);
+    setIsProcessingFiles(true);
+    try {
+      const newAttachments = await processMultipleFiles(files);
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    } catch (err) {
+      console.error('Eroare procesare fișiere:', err);
+    } finally {
+      setIsProcessingFiles(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-    }
-    setAttachments((prev) => [...prev, ...newAttachments]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -81,16 +83,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
 
-    const newAttachments: UploadedAttachment[] = [];
-    for (let i = 0; i < files.length; i++) {
-      try {
-        const att = await processUploadedFile(files[i]);
-        newAttachments.push(att);
-      } catch (err) {
-        console.error('Eroare procesare fișier drop:', err);
-      }
+    setIsProcessingFiles(true);
+    try {
+      const newAttachments = await processMultipleFiles(files);
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    } catch (err) {
+      console.error('Eroare procesare fișiere drop:', err);
+    } finally {
+      setIsProcessingFiles(false);
     }
-    setAttachments((prev) => [...prev, ...newAttachments]);
   };
 
   const removeAttachment = (id: string) => {
@@ -120,6 +121,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   return (
     <div
       className="flex flex-col h-full bg-stone-50 border-r border-stone-200"
@@ -133,28 +140,28 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {/* Top Banner / Guidance */}
       <div className="p-3 bg-white border-b border-stone-200 flex items-center justify-between text-xs text-stone-600 gap-2">
         <div className="flex items-center gap-2 truncate">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
-          <span className="font-semibold text-stone-800 shrink-0">
-            Metodist Didactic Activ
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+          <span className="font-bold text-stone-800 shrink-0">
+            Metodist Didactic
           </span>
           <span className="text-stone-300 hidden sm:inline">|</span>
           <span className="text-stone-500 truncate hidden md:inline">
-            Atașează pagini din manual sau documente didactice
+            Atașează orice resurse (foto manual, programă PDF, fișe Word)
           </span>
         </div>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
-          title="Atașează fotografii din manual, pagini de carte, PDF sau DOCX"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
+          title="Atașează mai multe fișiere: foto pagină manual, PDF, Word etc."
         >
-          <Paperclip className="w-3.5 h-3.5 text-blue-600" />
-          <span>+ Încarcă fișier</span>
+          <Paperclip className="w-3.5 h-3.5 text-blue-700" />
+          <span>+ Încarcă fișiere multiple</span>
         </button>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -162,59 +169,74 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               msg.sender === 'user' ? 'items-end' : 'items-start'
             }`}
           >
-            {/* Sender Label */}
-            <div className="flex items-center gap-1.5 mb-1 px-1 text-xs text-stone-500">
-              {msg.sender === 'assistant' ? (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                  <span className="font-semibold text-blue-900">Metodist Didactic</span>
-                </>
-              ) : (
-                <span className="font-medium">Dumneavoastră (Cadrul Didactic)</span>
-              )}
-              <span>·</span>
-              <span className="text-[11px] text-stone-400">{msg.timestamp}</span>
-            </div>
-
-            {/* Bubble */}
             <div
-              className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-4 text-sm shadow-xs leading-relaxed ${
+              className={`max-w-[88%] sm:max-w-[80%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-xs transition-all ${
                 msg.sender === 'user'
                   ? 'bg-blue-700 text-white rounded-tr-xs'
-                  : 'bg-white text-stone-900 border border-stone-200 rounded-tl-xs'
+                  : 'bg-white text-stone-800 border border-stone-200/90 rounded-tl-xs'
               }`}
             >
-              {/* Attached files preview in user message */}
+              {/* Message Header */}
+              <div
+                className={`flex items-center justify-between gap-3 text-[11px] mb-2 font-medium ${
+                  msg.sender === 'user' ? 'text-blue-100' : 'text-stone-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold">
+                  {msg.sender === 'user' ? (
+                    <span>Prof. Neacsu Roxana</span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-blue-900">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 inline" /> Metodist Învățământ Primar
+                    </span>
+                  )}
+                </div>
+                <span>{msg.timestamp}</span>
+              </div>
+
+              {/* Attachments preview if user attached files */}
               {msg.attachments && msg.attachments.length > 0 && (
                 <div className="mb-3 space-y-2">
-                  <div className="text-xs font-semibold opacity-90">
-                    Materiale atașate spre analiză didactică:
+                  <div
+                    className={`text-[11px] font-bold uppercase tracking-wider ${
+                      msg.sender === 'user' ? 'text-blue-200' : 'text-stone-500'
+                    }`}
+                  >
+                    Resurse atașate ({msg.attachments.length}):
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {msg.attachments.map((att) => (
                       <div
                         key={att.id}
-                        className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs ${
                           msg.sender === 'user'
-                            ? 'bg-blue-800/80 text-white border border-blue-600'
-                            : 'bg-stone-100 text-stone-800'
+                            ? 'bg-blue-800/80 border-blue-600 text-white'
+                            : 'bg-stone-50 border-stone-200 text-stone-800'
                         }`}
                       >
                         {att.previewUrl ? (
                           <img
                             src={att.previewUrl}
                             alt={att.name}
-                            className="w-10 h-10 object-cover rounded-sm border border-stone-300"
+                            className="w-9 h-9 object-cover rounded-lg border border-white/20 shrink-0"
                           />
+                        ) : att.type === 'pdf' ? (
+                          <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                            PDF
+                          </div>
+                        ) : att.type === 'docx' || att.type === 'doc' ? (
+                          <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[10px] shrink-0">
+                            DOC
+                          </div>
                         ) : (
-                          <div className="w-8 h-8 rounded-sm bg-stone-200 flex items-center justify-center text-stone-700">
-                            <FileText className="w-4 h-4" />
+                          <div className="w-9 h-9 rounded-lg bg-stone-200 text-stone-700 flex items-center justify-center shrink-0">
+                            <File className="w-4 h-4" />
                           </div>
                         )}
-                        <div className="truncate flex-1">
-                          <p className="font-medium truncate">{att.name}</p>
-                          <p className="text-[10px] opacity-75 uppercase">
-                            {att.type} · {(att.size / 1024).toFixed(0)} KB
+                        <div className="truncate flex-1 min-w-0">
+                          <p className="font-semibold truncate text-xs">{att.name}</p>
+                          <p className="text-[10px] opacity-80 uppercase">
+                            {formatFileSize(att.size)}
                           </p>
                         </div>
                       </div>
@@ -224,22 +246,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               )}
 
               {/* Message Content */}
-              <div className="whitespace-pre-wrap font-sans text-stone-900">
+              <div className="whitespace-pre-wrap font-sans">
                 {msg.sender === 'user' ? (
                   <span className="text-white">{msg.text}</span>
                 ) : (
-                  <div>{msg.text}</div>
+                  <div className="text-stone-800">{msg.text}</div>
                 )}
               </div>
 
               {/* Proactive Clarification Questions Card */}
               {msg.missingQuestions && msg.missingQuestions.length > 0 && (
                 <div className="mt-3.5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-stone-800">
-                  <div className="flex items-center gap-1.5 font-semibold text-amber-900 text-xs mb-2">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900 text-xs mb-1.5">
                     <HelpCircle className="w-4 h-4 text-amber-700" />
-                    <span>Detalii necesare pentru o schiță completă și adaptată:</span>
+                    <span>Detalii necesare pentru a personaliza schița:</span>
                   </div>
-                  <ul className="space-y-1.5 text-xs text-stone-700 list-disc list-inside">
+                  <ul className="space-y-1 text-xs text-stone-700 list-disc list-inside">
                     {msg.missingQuestions.map((q, idx) => (
                       <li key={idx} className="font-medium">
                         {q}
@@ -247,82 +269,84 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     ))}
                   </ul>
                   <p className="text-[11px] text-amber-800 mt-2 italic">
-                    Răspundeți pe scurt în căsuța de mai jos sau încărcați o poză cu pagina din manual.
+                    Răspundeți pe scurt sau atașați o fotografie cu pagina din manual / programa școlară.
                   </p>
                 </div>
               )}
 
               {/* Generated Lesson Plan Card Indicator */}
               {msg.lessonPlan && (
-                <div className="mt-4 p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-stone-900">
+                <div className="mt-3.5 p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-stone-900">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 uppercase tracking-wide">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        Schiță de Lecție Proiectată
+                        <span>Schiță Proiectată Conform Formatului Oficial</span>
                       </div>
-                      <h4 className="font-semibold text-sm text-stone-900 mt-1">
+                      <h4 className="font-extrabold text-sm sm:text-base text-stone-900 mt-1">
                         {msg.lessonPlan.subiectulLectiei}
                       </h4>
                       <p className="text-xs text-stone-600 mt-0.5">
-                        {msg.lessonPlan.clasa} · {msg.lessonPlan.disciplina} ·{' '}
-                        {msg.lessonPlan.durata}
+                        {msg.lessonPlan.clasa} · {msg.lessonPlan.disciplina} ({msg.lessonPlan.tipulLectiei})
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {onRegenerateLesson && (
+                        <button
+                          onClick={() => onRegenerateLesson(msg.lessonPlan!)}
+                          title="Regenerează această schiță"
+                          className="p-1.5 text-stone-500 hover:text-blue-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      )}
+                      {onDeleteLesson && (
+                        <button
+                          onClick={() => onDeleteLesson(msg.lessonPlan!.id)}
+                          title="Șterge schița din ecran"
+                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-blue-100">
+                  {/* Operational Objectives Preview */}
+                  {msg.lessonPlan.obiectiveOperationale && (
+                    <div className="mt-2.5 pt-2.5 border-t border-blue-200/60 text-xs text-stone-700">
+                      <span className="font-bold text-stone-900 block mb-1">Obiective operaționale:</span>
+                      <ul className="list-disc list-inside space-y-0.5 text-[11px] text-stone-600">
+                        {msg.lessonPlan.obiectiveOperationale.slice(0, 3).map((obj, i) => (
+                          <li key={i} className="truncate">
+                            {obj}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Actions Bar */}
+                  <div className="mt-3 pt-2.5 border-t border-blue-200/60 flex items-center justify-between gap-2">
                     <button
                       onClick={() => onOpenLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      Deschide în Vizualizator
+                      <span>Deschide Schița Completă</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+
                     <button
                       onClick={() => handleExportLesson(msg.lessonPlan!)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-50 text-blue-900 border border-stone-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      title="Descarcă documentul Word formatat (.docx)"
                     >
                       <FileDown className="w-3.5 h-3.5 text-blue-700" />
-                      Descarcă Word (.docx)
+                      <span>DOCX</span>
                     </button>
-                    {onRegenerateLesson && (
-                      <button
-                        onClick={() => onRegenerateLesson(msg.lessonPlan!)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                        title="Regenerează această schiță dacă doriți idei noi"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Regenerează
-                      </button>
-                    )}
-                    {onDeleteLesson && (
-                      <button
-                        onClick={() => onDeleteLesson(msg.lessonPlan!.id)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                        title="Șterge schița dacă nu e bună"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Șterge
-                      </button>
-                    )}
                   </div>
-                </div>
-              )}
-
-              {/* Quick follow-up suggestions */}
-              {msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-stone-100 flex flex-wrap gap-1.5">
-                  {msg.suggestedPrompts.map((sugg, i) => (
-                    <button
-                      key={i}
-                      onClick={() => onApplyPromptSuggestion(sugg)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-stone-100 hover:bg-blue-50 hover:text-blue-800 text-stone-700 rounded-md text-xs font-medium border border-stone-200 transition-colors cursor-pointer"
-                    >
-                      <ArrowRight className="w-3 h-3 text-stone-400" />
-                      {sugg}
-                    </button>
-                  ))}
                 </div>
               )}
             </div>
@@ -330,9 +354,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-stone-200 text-xs text-stone-600 max-w-xs shadow-xs animate-pulse">
-            <Sparkles className="w-4 h-4 text-blue-600 animate-spin" />
-            <span>Metodistul elaborează schița didactică...</span>
+          <div className="flex items-center gap-3 p-4 bg-white border border-stone-200 rounded-2xl max-w-md shadow-xs animate-pulse">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+              <Sparkles className="w-4 h-4 animate-spin text-blue-700" />
+            </div>
+            <div className="text-xs sm:text-sm text-stone-700">
+              <span className="font-bold text-blue-950 block">Metodistul proiectează schița...</span>
+              <span className="text-[11px] text-stone-500">
+                Analizează resursele atașate, formulează obiectivele și etapele didactice.
+              </span>
+            </div>
           </div>
         )}
 
@@ -341,102 +372,80 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Drag & Drop Visual Overlay */}
       {isDragging && (
-        <div className="p-4 mx-4 mb-2 bg-blue-50 border-2 border-dashed border-blue-400 rounded-xl text-center text-blue-800 text-xs font-semibold animate-pulse">
-          Plasați aici fișierele (PDF, DOCX, imagine pagină manual) pentru analiză didactică
+        <div className="p-4 mx-4 mb-2 bg-blue-100 border-2 border-dashed border-blue-500 rounded-2xl text-center text-blue-900 text-xs font-bold animate-pulse">
+          Plasați aici fișierele (foto manual, programă PDF, Word DOCX etc.)
         </div>
       )}
 
-      {/* Attachment Preview Bar */}
+      {/* Attachment Staged Preview Bar */}
       {attachments.length > 0 && (
-        <div className="p-3 bg-white border-t border-stone-200 flex flex-wrap gap-2">
-          {attachments.map((att) => (
-            <div
-              key={att.id}
-              className="flex items-center gap-2 px-2.5 py-1.5 bg-stone-100 rounded-lg border border-stone-200 text-xs"
+        <div className="p-3 bg-blue-50/80 border-t border-blue-200">
+          <div className="flex items-center justify-between text-[11px] font-bold text-blue-950 mb-2">
+            <span>Resurse pregătite pentru trimitere ({attachments.length}):</span>
+            <button
+              onClick={() => setAttachments([])}
+              className="text-red-600 hover:underline text-[10px] cursor-pointer"
             >
-              {att.previewUrl ? (
-                <img
-                  src={att.previewUrl}
-                  alt={att.name}
-                  className="w-6 h-6 object-cover rounded-xs"
-                />
-              ) : (
-                <FileText className="w-4 h-4 text-stone-600" />
-              )}
-              <span className="max-w-[140px] truncate text-stone-800 font-medium">
-                {att.name}
-              </span>
-              <button
-                onClick={() => removeAttachment(att.id)}
-                className="text-stone-400 hover:text-stone-700 p-0.5 rounded-full"
+              Șterge toate
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+            {attachments.map((att) => (
+              <div
+                key={att.id}
+                className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-blue-200 text-xs shadow-2xs"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
+                {att.previewUrl ? (
+                  <img
+                    src={att.previewUrl}
+                    alt={att.name}
+                    className="w-6 h-6 object-cover rounded-md border border-stone-200 shrink-0"
+                  />
+                ) : att.type === 'pdf' ? (
+                  <span className="px-1.5 py-0.5 bg-red-100 text-red-700 font-bold text-[9px] rounded">
+                    PDF
+                  </span>
+                ) : att.type === 'docx' || att.type === 'doc' ? (
+                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 font-bold text-[9px] rounded">
+                    DOC
+                  </span>
+                ) : (
+                  <File className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                )}
+                <span className="max-w-[130px] truncate text-stone-900 font-semibold text-xs">
+                  {att.name}
+                </span>
+                <span className="text-[10px] text-stone-400">
+                  {formatFileSize(att.size)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(att.id)}
+                  className="text-stone-400 hover:text-red-600 p-0.5 rounded-full transition-colors cursor-pointer"
+                  title="Elimină"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Input Area */}
       <div className="p-3 bg-white border-t border-stone-200">
-        {/* Prominent File Attachment Button Bar */}
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100 gap-2">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
-          >
-            <Paperclip className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span>+ Atașează fișier resursă (foto manual, fișă, docx, pdf)</span>
-          </button>
-          <span className="text-[11px] text-stone-400 hidden sm:inline">
-            sau trage fișierele aici
-          </span>
-        </div>
-
-        {/* Quick Didactic Themes */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-[11px] text-stone-600">
-          <span className="font-semibold text-stone-400 shrink-0">Exemple:</span>
-          <button
-            onClick={() =>
-              onApplyPromptSuggestion(
-                'Vreau o schiță de lecție la Limba și literatura română, Clasa a III-a, despre Substantiv (lecție de predare).'
-              )
-            }
-            className="shrink-0 px-2 py-0.5 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-          >
-            Substantivul (Clasa a III-a)
-          </button>
-          <button
-            onClick={() =>
-              onApplyPromptSuggestion(
-                'Proiectează o lecție de Matematică și explorarea mediului la Clasa a II-a: Adunarea cu trecere peste ordin (27 + 5).'
-              )
-            }
-            className="shrink-0 px-2 py-0.5 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-          >
-            Adunarea 0-100 MEM (Clasa a II-a)
-          </button>
-          <button
-            onClick={() =>
-              onApplyPromptSuggestion(
-                'Lecție Științe ale naturii la Clasa a IV-a: Părțile unei plante și rolul lor.'
-              )
-            }
-            className="shrink-0 px-2 py-0.5 bg-stone-100 hover:bg-stone-200 rounded-md transition-colors"
-          >
-            Planta și părțile ei (Clasa a IV-a)
-          </button>
-        </div>
-
-        <div className="flex items-end gap-2 bg-stone-50 border border-stone-300 rounded-xl p-2 focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
+        <div className="flex items-end gap-2 bg-stone-50 border border-stone-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-blue-600 focus-within:border-transparent transition-all">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Scrieți solicitarea sau detaliile lecției (ex: clasa, disciplina, subiectul dorit sau întrebări didactice)..."
+            placeholder={
+              attachments.length > 0
+                ? 'Precizați clasa sau cerințe pentru fișierele atașate (sau apăsați Trimite direct)...'
+                : 'Scrieți solicitarea sau apăsați agrafa pentru a atașa foto din manual, PDF, Word...'
+            }
             rows={2}
-            className="flex-1 bg-transparent resize-none text-stone-900 text-sm focus:outline-none placeholder:text-stone-400"
+            className="flex-1 bg-transparent resize-none text-stone-900 text-xs sm:text-sm focus:outline-none placeholder:text-stone-400"
           />
 
           <div className="flex items-center gap-1.5">
@@ -445,24 +454,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               ref={fileInputRef}
               onChange={handleFileChange}
               multiple
-              accept="image/*,.pdf,.docx,.doc"
               className="hidden"
             />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              title="Atașează pagini de manual (imagini), PDF sau DOCX"
-              className="p-2 text-stone-500 hover:text-blue-700 hover:bg-stone-200 rounded-lg transition-colors"
+              title="Atașează mai multe fișiere (foto pagină manual, PDF, Word etc.)"
+              className="p-2 text-stone-600 hover:text-blue-700 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
             >
-              <Paperclip className="w-4 h-4" />
+              <Paperclip className="w-4 h-4 text-blue-700" />
             </button>
 
             <button
               type="button"
               onClick={handleSend}
-              disabled={(!inputText.trim() && attachments.length === 0) || isLoading}
-              className="p-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-lg transition-colors shadow-xs"
-              title="Trimite solicitarea"
+              disabled={(!inputText.trim() && attachments.length === 0) || isLoading || isProcessingFiles}
+              className="p-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white rounded-xl transition-colors shadow-xs cursor-pointer"
+              title="Trimite către metodist"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -470,7 +478,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
 
         <div className="flex items-center justify-between mt-2 text-[11px] text-stone-400">
-          <span>Puteți atașa: PDF, DOCX, imagini cu manualul sau programa școlară.</span>
+          <span>Puteți atașa oricâte imagini, PDF-uri sau documente simultan.</span>
           <span>Shift + Enter pentru rând nou</span>
         </div>
       </div>
