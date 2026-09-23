@@ -10,6 +10,7 @@ const LOCAL_STORAGE_KEY = 'metodist_primar_saved_plans_v4';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'lesson' | 'chat' | 'saved'>('lesson');
+  const [isSplitView, setIsSplitView] = useState<boolean>(false);
   const [currentLesson, setCurrentLesson] = useState<LessonPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [savedPlans, setSavedPlans] = useState<LessonPlan[]>([]);
@@ -24,8 +25,9 @@ export default function App() {
 
 Vă asist cu drag în proiectarea schițelor de lecție. Structura metodică din documentul oficial «schițe de lecție.docx» este utilizată automat ca reper pedagogic pentru generarea oricărei teme solicitate.
 
-• Apăsați pe „Lecție Nouă” sau scrieți direct tema în chat pentru a genera o schiță completă.
-• Dacă o schiță generată nu este pe placul dumneavoastră, folosiți butonul «Șterge» pentru a o elimina sau «Regenerează» pentru a încerca alte activități, exerciții și jocuri didactice!`,
+• Puteți atașa oricând imagini cu pagini din manual, documente Word sau PDF folosind butonul «+ Atașează fișier resursă».
+• Puteți genera instant schițe apăsând «Lecție Nouă» sau scriind direct tema în chat.
+• Dacă o schiță generată nu este pe placul dumneavoastră, folosiți butonul «Șterge» pentru a o elimina sau «Regenerează» pentru a încerca alte idei și jocuri didactice!`,
       timestamp: new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
       suggestedPrompts: [
         'Lecție nouă Limba română Clasa a III-a: Substantivul',
@@ -188,58 +190,99 @@ Vă asist cu drag în proiectarea schițelor de lecție. Structura metodică din
 
   return (
     <div className="flex flex-col h-screen bg-stone-100 text-stone-900 font-sans overflow-hidden">
-      {/* Header Simplificat */}
+      {/* Header cu Navigare, Buton Chat & Resurse și Ecran Împărțit */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentLesson={currentLesson}
         onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
         savedCount={savedPlans.length}
+        isSplitView={isSplitView}
+        onToggleSplitView={() => setIsSplitView((prev) => !prev)}
       />
 
       {/* Spațiu Principal de Lucru */}
       <main className="flex-1 overflow-hidden relative">
-        {activeTab === 'lesson' && (
-          <div className="h-full w-full">
-            <LessonPlanView
-              lesson={currentLesson}
-              onUpdateLesson={(updated) => {
-                setCurrentLesson(updated);
-                savePlanToStorage(updated);
-              }}
-              onSaveToHistory={savePlanToStorage}
-              onDeleteLesson={handleDeleteLesson}
-              onRegenerateLesson={handleRegenerateLesson}
-              isRegenerating={isLoading}
-              onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
-              onSwitchToChat={() => setActiveTab('chat')}
-            />
-          </div>
-        )}
+        {/* Mod Ecran Împărțit: Schiță de Lecție + Chat & Resurse alăturate */}
+        {isSplitView && activeTab !== 'saved' ? (
+          <div className="flex h-full w-full overflow-hidden">
+            {/* Stânga: Schiță de Lecție */}
+            <div className="flex-1 h-full overflow-hidden border-r border-stone-200">
+              <LessonPlanView
+                lesson={currentLesson}
+                onUpdateLesson={(updated) => {
+                  setCurrentLesson(updated);
+                  savePlanToStorage(updated);
+                }}
+                onSaveToHistory={savePlanToStorage}
+                onDeleteLesson={handleDeleteLesson}
+                onRegenerateLesson={handleRegenerateLesson}
+                isRegenerating={isLoading}
+                onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
+                onSwitchToChat={() => setActiveTab('chat')}
+              />
+            </div>
 
-        {activeTab === 'chat' && (
-          <div className="h-full max-w-4xl mx-auto flex flex-col bg-white shadow-xs">
-            <ChatPanel
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              onOpenLesson={handleOpenLesson}
-              currentLesson={currentLesson}
-              onApplyPromptSuggestion={handleApplyPrompt}
-              onDeleteLesson={handleDeleteLesson}
-              onRegenerateLesson={(plan) => handleRegenerateLesson(plan)}
-            />
+            {/* Dreapta: Chat & Atașare Fișiere Resursă */}
+            <div className="w-[440px] xl:w-[490px] shrink-0 h-full flex flex-col bg-white shadow-lg border-l border-stone-200">
+              <ChatPanel
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                onOpenLesson={handleOpenLesson}
+                currentLesson={currentLesson}
+                onApplyPromptSuggestion={handleApplyPrompt}
+                onDeleteLesson={handleDeleteLesson}
+                onRegenerateLesson={(plan) => handleRegenerateLesson(plan)}
+              />
+            </div>
           </div>
-        )}
+        ) : (
+          /* Mod Clasic pe File Separate */
+          <>
+            {activeTab === 'lesson' && (
+              <div className="h-full w-full">
+                <LessonPlanView
+                  lesson={currentLesson}
+                  onUpdateLesson={(updated) => {
+                    setCurrentLesson(updated);
+                    savePlanToStorage(updated);
+                  }}
+                  onSaveToHistory={savePlanToStorage}
+                  onDeleteLesson={handleDeleteLesson}
+                  onRegenerateLesson={handleRegenerateLesson}
+                  isRegenerating={isLoading}
+                  onOpenQuickCreator={() => setIsQuickCreatorOpen(true)}
+                  onSwitchToChat={() => setActiveTab('chat')}
+                />
+              </div>
+            )}
 
-        {activeTab === 'saved' && (
-          <div className="h-full max-w-4xl mx-auto p-4 sm:p-6 overflow-y-auto">
-            <SavedPlansView
-              savedPlans={savedPlans}
-              onOpenLesson={handleOpenLesson}
-              onDeletePlan={deletePlanFromStorage}
-            />
-          </div>
+            {activeTab === 'chat' && (
+              <div className="h-full max-w-4xl mx-auto flex flex-col bg-white shadow-xs">
+                <ChatPanel
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoading}
+                  onOpenLesson={handleOpenLesson}
+                  currentLesson={currentLesson}
+                  onApplyPromptSuggestion={handleApplyPrompt}
+                  onDeleteLesson={handleDeleteLesson}
+                  onRegenerateLesson={(plan) => handleRegenerateLesson(plan)}
+                />
+              </div>
+            )}
+
+            {activeTab === 'saved' && (
+              <div className="h-full max-w-4xl mx-auto p-4 sm:p-6 overflow-y-auto">
+                <SavedPlansView
+                  savedPlans={savedPlans}
+                  onOpenLesson={handleOpenLesson}
+                  onDeletePlan={deletePlanFromStorage}
+                />
+              </div>
+            )}
+          </>
         )}
       </main>
 

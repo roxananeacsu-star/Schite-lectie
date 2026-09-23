@@ -131,20 +131,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       onDrop={handleDrop}
     >
       {/* Top Banner / Guidance */}
-      <div className="p-3.5 bg-white border-b border-stone-200 flex items-center justify-between text-xs text-stone-600">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="font-semibold text-stone-800">
+      <div className="p-3 bg-white border-b border-stone-200 flex items-center justify-between text-xs text-stone-600 gap-2">
+        <div className="flex items-center gap-2 truncate">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+          <span className="font-semibold text-stone-800 shrink-0">
             Metodist Didactic Activ
           </span>
-          <span className="text-stone-400">·</span>
-          <span className="hidden sm:inline">
-            Încarcă imagini din manual, PDF sau solicită o temă didactică
+          <span className="text-stone-300 hidden sm:inline">|</span>
+          <span className="text-stone-500 truncate hidden md:inline">
+            Atașează pagini din manual sau documente didactice
           </span>
         </div>
-        <div className="text-stone-500 font-medium">
-          Format: <span className="font-semibold text-blue-700">schițe de lecție.docx</span>
-        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+          title="Atașează fotografii din manual, pagini de carte, PDF sau DOCX"
+        >
+          <Paperclip className="w-3.5 h-3.5 text-blue-600" />
+          <span>+ Încarcă fișier</span>
+        </button>
       </div>
 
       {/* Messages Scroll Area */}
@@ -373,6 +379,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Input Area */}
       <div className="p-3 bg-white border-t border-stone-200">
+        {/* Prominent File Attachment Button Bar */}
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100 gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group"
+          >
+            <Paperclip className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
+            <span>+ Atașează fișier resursă (foto manual, fișă, docx, pdf)</span>
+          </button>
+          <span className="text-[11px] text-stone-400 hidden sm:inline">
+            sau trage fișierele aici
+          </span>
+        </div>
+
         {/* Quick Didactic Themes */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-[11px] text-stone-600">
           <span className="font-semibold text-stone-400 shrink-0">Exemple:</span>

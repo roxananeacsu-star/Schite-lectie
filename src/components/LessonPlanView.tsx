@@ -18,6 +18,7 @@ import {
   X,
   PlusCircle,
   HelpCircle,
+  Paperclip,
 } from 'lucide-react';
 import { LessonPlan, LessonStage } from '../types';
 import { generateDocxBlob, downloadBlob } from '../utils/docxExport';
@@ -77,9 +78,31 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
           <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight mb-2">
             Proiectează o Schiță de Lecție
           </h2>
-          <p className="text-sm text-stone-600 mb-6 leading-relaxed">
+          <p className="text-sm text-stone-600 mb-5 leading-relaxed">
             Metodistul generează automat schița completă conform structurii oficiale din documentul de referință (cu obiective, etape, timpi alocați, marcaje cu roșu la tablă și jocuri interactive Wordwall).
           </p>
+
+          {/* Card Direct: Chat & Atașare Fișiere Resursă (Manual / Fișe) */}
+          <div
+            onClick={onSwitchToChat}
+            className="p-3.5 mb-5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 hover:border-blue-400 rounded-2xl cursor-pointer text-left transition-all group flex items-center gap-3 shadow-2xs"
+          >
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+              <Paperclip className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-xs sm:text-sm text-blue-950 flex items-center gap-2">
+                <span>Aveți pagini de manual sau fișiere resursă?</span>
+                <span className="text-[10px] bg-blue-200 text-blue-900 font-extrabold px-1.5 py-0.5 rounded">
+                  CHAT & RESURSE
+                </span>
+              </div>
+              <p className="text-xs text-blue-800/80 mt-0.5">
+                Deschideți Chat-ul pentru a atașa imagini (foto pagină manual), documente PDF sau Word.
+              </p>
+            </div>
+            <MessageSquare className="w-5 h-5 text-blue-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+          </div>
 
           {/* Quick inline form */}
           <div className="space-y-3.5 text-left mb-6">
@@ -171,10 +194,11 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({
 
             <button
               onClick={onSwitchToChat}
-              className="w-full sm:w-auto px-4 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>Scrie în Chat</span>
+              <MessageSquare className="w-4 h-4 text-blue-700" />
+              <Paperclip className="w-4 h-4 text-blue-700" />
+              <span>Chat & Atașează Fișiere</span>
             </button>
           </div>
         </div>
@@ -283,8 +307,20 @@ An școlar 2026 - 2027`;
           </span>
         </div>
 
-        {/* Butoane de Acțiune: Regenerare, Ștergere, Editare, Descărcare */}
+        {/* Butoane de Acțiune: Chat/Resurse, Regenerare, Ștergere, Editare, Descărcare */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* BUTON CHAT & RESURSE CU ATAȘARE FIȘIERE */}
+          <button
+            onClick={onSwitchToChat}
+            title="Deschide Chat-ul metodic și atașează imagini din manual, PDF sau fișiere resursă"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-blue-700" />
+            <Paperclip className="w-3.5 h-3.5 text-blue-700" />
+            <span className="hidden sm:inline">Chat & Resurse</span>
+            <span className="sm:hidden">Chat</span>
+          </button>
+
           {/* BUTON REGENERARE */}
           <button
             onClick={() => setShowRegenerateModal(true)}
@@ -714,6 +750,31 @@ An școlar 2026 - 2027`;
             An școlar 2026 - 2027
           </div>
         </div>
+      </div>
+
+      {/* Bară Resurse & Chat la Subsol */}
+      <div className="no-print bg-white border-t border-stone-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+        <div className="flex items-center gap-2.5 text-stone-700">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
+            <Paperclip className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-bold text-stone-900">
+              Aveți fotografii cu pagina din manual sau o fișă de lucru?
+            </div>
+            <div className="text-stone-500">
+              Deschideți Chat-ul pentru a atașa fișiere resursă și a adapta schița conform conținutului din manual.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onSwitchToChat}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl transition-colors cursor-pointer shadow-xs"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <Paperclip className="w-3.5 h-3.5" />
+          <span>Deschide Chat & Atașează Resurse</span>
+        </button>
       </div>
 
       {/* CONFIRMARE ȘTERGERE MODAL */}
